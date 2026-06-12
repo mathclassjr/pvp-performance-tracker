@@ -63,6 +63,8 @@ public class PvpDamageCalc
 
 	private static final int STANCE_BONUS = 0; // assume they are not in controlled or defensive
 	private static final double UNSUCCESSFUL_PRAY_DMG_MODIFIER = 0.6; // modifier for when you unsuccessfully hit off-pray
+	private static final double ELYSIAN_DAMAGE_MULTIPLIER = 0.75;
+	private static final double STAFF_MELEE_DAMAGE_MULTIPLIER = 0.5;
 
 	// Offensive pray: assume you have valid. Piety for melee, Rigour for range, Augury for mage
 	private static final double PIETY_ATK_PRAYER_MODIFIER = 1.2;
@@ -86,6 +88,7 @@ public class PvpDamageCalc
 	private static final int DBOW_DMG_MODIFIER = 2;
 	private static final int DBOW_SPEC_DMG_MODIFIER = 3;
 	private static final int DBOW_SPEC_MIN_HIT = 16;
+	private static final int DBOW_SPEC_MAX_HIT_PER_ARROW = 48;
 	private static final double DRAGON_CBOW_SPEC_DMG_MODIFIER = 1.2;
 
 	private static final double DDS_SPEC_ACCURACY_MODIFIER = 1.25;
@@ -110,6 +113,9 @@ public class PvpDamageCalc
 
 	private static final double ABYSSAL_DAGGER_SPEC_ACCURACY_MODIFIER = 1.25;
 	private static final double ABYSSAL_DAGGER_SPEC_DMG_MODIFIER = 0.85;
+
+	private static final double ARKAN_BLADE_SPEC_ACCURACY_MODIFIER = 1.5;
+	private static final double ARKAN_BLADE_SPEC_DMG_MODIFIER = 1.5;
 
 	// 0.975x is a simplified average brimstone mage def formula, where x = opponent's mage def
 	// 25% of attacks ignore 10% of mage def, therefore 25% of attacks are 90% mage def and 75% are the usual 100%.
@@ -268,6 +274,37 @@ public class PvpDamageCalc
 
 		maxHit = (int)(maxHit * (success ? 1 : UNSUCCESSFUL_PRAY_DMG_MODIFIER));
 		minHit = (int)(minHit * (success ? 1 : UNSUCCESSFUL_PRAY_DMG_MODIFIER));
+
+		if (atkLog.isDefenderElyProc())
+		{
+			applyElysianReduction();
+		}
+		if (atkLog.isDefenderSotdMeleeReductionProc() && atkLog.getAnimationData().attackStyle.isMelee())
+		{
+			applyStaffMeleeReduction();
+		}
+	}
+
+	public void applyElysianReduction()
+	{
+		applyDamageMultiplier(ELYSIAN_DAMAGE_MULTIPLIER);
+	}
+
+	public void applyStaffMeleeReduction()
+	{
+		applyDamageMultiplier(STAFF_MELEE_DAMAGE_MULTIPLIER);
+	}
+
+	private void applyDamageMultiplier(double multiplier)
+	{
+		if (multiplier == 1)
+		{
+			return;
+		}
+
+		averageHit *= multiplier;
+		minHit = (int) Math.floor(minHit * multiplier);
+		maxHit = (int) Math.floor(maxHit * multiplier);
 	}
 
 	private void getAverageHit(boolean success, EquipmentData weapon, boolean usingSpec)
@@ -445,6 +482,7 @@ public class PvpDamageCalc
 		boolean dwh = weapon == EquipmentData.DRAGON_WARHAMMER;
 		boolean voidwaker = weapon == EquipmentData.VOIDWAKER;
 		boolean abyssalDagger = weapon == EquipmentData.ABYSSAL_DAGGER;
+		boolean arkanBlade = weapon == EquipmentData.ARKAN_BLADE;
 
 		int effectiveLevel = (int) Math.floor((attackerLevels.str * (successfulOffensive ? PIETY_STR_PRAYER_MODIFIER : 1)) + 8 + 3);
 		// apply void bonus if applicable
@@ -455,14 +493,15 @@ public class PvpDamageCalc
 
 		int baseDamage = (int) Math.floor(0.5 + effectiveLevel * (meleeStrength + 64) / 640.0);
 		double damageModifier = (ags && usingSpec) ? ARMA_GS_SPEC_DMG_MODIFIER :
-				(ancientGs && usingSpec) ? ANCIENT_GS_SPEC_DMG_MODIFIER :
-						(swh && usingSpec) ? SWH_SPEC_DMG_MODIFIER :
-								(dds && usingSpec) ? DDS_SPEC_DMG_MODIFIER :
-										(vls && usingSpec) ? VLS_SPEC_DMG_MODIFIER :
-												(dwh && usingSpec) ? DWH_SPEC_DMG_MODIFIER :
-														(voidwaker && usingSpec) ? VOIDWAKER_SPEC_DMG_MODIFIER :
-																(abyssalDagger && usingSpec) ? ABYSSAL_DAGGER_SPEC_DMG_MODIFIER :
-																		1;
+			(ancientGs && usingSpec) ? ANCIENT_GS_SPEC_DMG_MODIFIER :
+			(swh && usingSpec) ? SWH_SPEC_DMG_MODIFIER :
+			(dds && usingSpec) ? DDS_SPEC_DMG_MODIFIER :
+			(vls && usingSpec) ? VLS_SPEC_DMG_MODIFIER :
+			(dwh && usingSpec) ? DWH_SPEC_DMG_MODIFIER :
+			(voidwaker && usingSpec) ? VOIDWAKER_SPEC_DMG_MODIFIER :
+			(abyssalDagger && usingSpec) ? ABYSSAL_DAGGER_SPEC_DMG_MODIFIER :
+			(arkanBlade && usingSpec) ? ARKAN_BLADE_SPEC_DMG_MODIFIER :
+			1;
 		maxHit = (int) (damageModifier * baseDamage);
 	}
 
@@ -539,6 +578,15 @@ public class PvpDamageCalc
 
 			maxHit *= dmgModifier;
 		}
+
+		if (dbow && usingSpec)
+		{
+			int cap = DBOW_SPEC_MAX_HIT_PER_ARROW * 2;
+			if (maxHit > cap)
+			{
+				maxHit = cap;
+			}
+		}
 	}
 
 	private void getMagicMaxHit(EquipmentData shield, int mageDamageBonus, AnimationData animationData, EquipmentData weapon, VoidStyle voidStyle, boolean successfulOffensive)
@@ -575,6 +623,7 @@ public class PvpDamageCalc
 		boolean fang = weapon == EquipmentData.OSMUMTENS_FANG;
 		boolean voidwaker = weapon == EquipmentData.VOIDWAKER;
 		boolean abyssalDagger = weapon == EquipmentData.ABYSSAL_DAGGER;
+		boolean arkanBlade = weapon == EquipmentData.ARKAN_BLADE;
 
 		if (voidwaker && usingSpec)
 		{
@@ -599,10 +648,11 @@ public class PvpDamageCalc
 		double defenderChance;
 
 		double accuracyModifier = dds ? DDS_SPEC_ACCURACY_MODIFIER :
-				ags ? ARMA_GS_SPEC_ACCURACY_MODIFIER :
-						ancientGs ? ANCIENT_GS_SPEC_ACCURACY_MODIFIER :
-								fang ? FANG_SPEC_ACCURACY_MODIFIER :
-										1;
+			ags ? ARMA_GS_SPEC_ACCURACY_MODIFIER :
+			ancientGs ? ANCIENT_GS_SPEC_ACCURACY_MODIFIER :
+			fang ? FANG_SPEC_ACCURACY_MODIFIER :
+			arkanBlade ? ARKAN_BLADE_SPEC_ACCURACY_MODIFIER :
+			1;
 
 		/**
 		 * Attacker Chance
@@ -690,8 +740,12 @@ public class PvpDamageCalc
 		/**
 		 * Attacker Chance
 		 */
-		System.out.println("getRangeAccuracy range Level: " + attackerLevels.range);
-		effectiveLevelPlayer = Math.floor(((attackerLevels.range * (successfulOffensive ? RIGOUR_OFFENSIVE_PRAYER_ATTACK_MODIFIER : 1)) + STANCE_BONUS) + 8);
+		int stanceBonus = STANCE_BONUS;
+		if (weapon == EquipmentData.DARK_BOW && usingSpec)
+		{
+			stanceBonus += 3; // dark bow spec is assumed to be on accurate
+		}
+		effectiveLevelPlayer = Math.floor(((attackerLevels.range * (successfulOffensive ? RIGOUR_OFFENSIVE_PRAYER_ATTACK_MODIFIER : 1)) + stanceBonus) + 8);
 		// apply void bonus if applicable
 		if (voidStyle == VoidStyle.VOID_ELITE_RANGE || voidStyle == VoidStyle.VOID_RANGE)
 		{

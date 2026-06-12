@@ -44,6 +44,7 @@ import matsyir.pvpperformancetracker.models.AnimationData.AttackStyle;
 import matsyir.pvpperformancetracker.models.CombatLevels;
 import matsyir.pvpperformancetracker.models.FightLogEntry;
 import matsyir.pvpperformancetracker.models.FightType;
+import matsyir.pvpperformancetracker.utils.FightIdGenerator;
 import matsyir.pvpperformancetracker.models.oldVersions.FightPerformance__1_5_5;
 import net.runelite.api.AnimationID;
 import net.runelite.api.Client;
@@ -92,6 +93,13 @@ public class FightPerformance implements Comparable<FightPerformance>
 	@Expose
 	@SerializedName("w")
 	private int world;
+	@Expose
+	@SerializedName("fightID")
+	@Getter
+	private String fightId;
+
+	private transient boolean fightIdGenerated = false;
+	private transient long initialTime = 0;
 
 	private int competitorPrevHp; // intentionally don't serialize this, temp variable used to calculate hp healed.
 
@@ -151,6 +159,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 		// this is initialized soon before the NEW_FIGHT_DELAY time because the event we
 		// determine the opponent from is not fully reliable.
 		lastFightTime = Instant.now().minusSeconds(NEW_FIGHT_DELAY.getSeconds() - 5).toEpochMilli();
+		initialTime = Instant.now().toEpochMilli();
 
 		this.competitor = new Fighter(this, competitor);
 		this.opponent = new Fighter(this, opponent);
@@ -171,6 +180,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 		this.competitor = old.competitor;
 		this.opponent = old.opponent;
 		this.lastFightTime = old.lastFightTime;
+		this.initialTime = old.lastFightTime;
 		if (old.isLmsFight)
 		{
 			if (!competitor.getFightLogEntries().isEmpty())
@@ -241,6 +251,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 		}
 
 		lastFightTime = Instant.now().minusSeconds(secondOffset).toEpochMilli();
+		this.initialTime = lastFightTime;
 	}
 
 	// If the given playerName is in this fight, check the Fighter's current animation,
@@ -272,6 +283,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 						competitorLevels, opponentsStats);
 				lastFightTime = Instant.now().toEpochMilli();
 				addedAttack = true;
+				ensureFightIdGenerated();
 
 			}
 		}
@@ -287,6 +299,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 				// add a defensive log for the competitor while the opponent is attacking, to be used with the fight analysis/merge
 				competitor.addDefensiveLogs(competitorLevels, PLUGIN.currentlyUsedOffensivePray());
 				lastFightTime = Instant.now().toEpochMilli();
+				ensureFightIdGenerated();
 			}
 		}
 
@@ -356,35 +369,29 @@ public class FightPerformance implements Comparable<FightPerformance>
 		competitorPrevHp = currentHp;
 	}
 
-	// Will return true and stop the fight if the fight should be over.
-	// if either competitor hasn't fought in NEW_FIGHT_DELAY, or either competitor died.
-	// Will also add the currentFight to fightHistory if the fight ended.
-	public boolean isFightOver()
+	// Will return true if either competitor has died yet
+	// Completely ending the fight on despawn is handled by the plugin rather than within FightPerformance.
+	public boolean checkForDeathAnimations()
 	{
-		boolean isOver = false;
-		// if either competitor died, end the fight.
+		// If either competitor is playing a death animation, mark dead but do not end the fight here.
 		if (Arrays.stream(DEATH_ANIMATIONS).anyMatch(e -> e == opponent.getPlayer().getAnimation()))
 		{
 			opponent.died();
-			isOver = true;
 		}
 		if (Arrays.stream(DEATH_ANIMATIONS).anyMatch(e -> e == competitor.getPlayer().getAnimation()))
 		{
 			competitor.died();
-			isOver = true;
-		}
-		// If there was no fight actions in the last NEW_FIGHT_DELAY seconds
-		if (Duration.between(Instant.ofEpochMilli(lastFightTime), Instant.now()).compareTo(NEW_FIGHT_DELAY) > 0)
-		{
-			isOver = true;
 		}
 
-		if (isOver)
-		{
-			lastFightTime = Instant.now().toEpochMilli();
-		}
+		return competitor.isDead() || opponent.isDead();
+	}
 
-		return isOver;
+	// returns true if the fight is considered inactive due to time. We should end the fight when this happens
+	public boolean isInactive()
+	{
+		// If there was no fight actions in the last NEW_FIGHT_DELAY seconds, consider the fight done, because
+		// presumably either the player or the opponent ran away/teleported at this point.
+		return Duration.between(Instant.ofEpochMilli(lastFightTime), Instant.now()).compareTo(NEW_FIGHT_DELAY) > 0;
 	}
 
 	public ArrayList<FightLogEntry> getAllFightLogEntries()
@@ -423,14 +430,14 @@ public class FightPerformance implements Comparable<FightPerformance>
 		return opponent.calculateOffPraySuccessPercentage() > competitor.calculateOffPraySuccessPercentage();
 	}
 
-	public boolean competitorDeservedDmgIsGreater()
+	public boolean competitorExpectedDmgIsGreater()
 	{
-		return competitor.getDeservedDamage() > opponent.getDeservedDamage();
+		return competitor.getExpectedDamage() > opponent.getExpectedDamage();
 	}
 
-	public boolean opponentDeservedDmgIsGreater()
+	public boolean opponentExpectedDmgIsGreater()
 	{
-		return opponent.getDeservedDamage() > competitor.getDeservedDamage();
+		return opponent.getExpectedDamage() > competitor.getExpectedDamage();
 	}
 
 	public boolean competitorDmgDealtIsGreater()
@@ -445,27 +452,27 @@ public class FightPerformance implements Comparable<FightPerformance>
 
 	public boolean competitorMagicHitsLuckier()
 	{
-		double competitorRate = (competitor.getMagicHitCountDeserved() == 0) ? 0 :
-				(competitor.getMagicHitCount() / competitor.getMagicHitCountDeserved());
-		double opponentRate = (opponent.getMagicHitCountDeserved() == 0) ? 0 :
-				(opponent.getMagicHitCount() / opponent.getMagicHitCountDeserved());
+		double competitorRate = (competitor.getMagicHitCountExpected() == 0) ? 0 :
+			(competitor.getMagicHitCount() / competitor.getMagicHitCountExpected());
+		double opponentRate = (opponent.getMagicHitCountExpected() == 0) ? 0 :
+			(opponent.getMagicHitCount() / opponent.getMagicHitCountExpected());
 
 		return competitorRate > opponentRate;
 	}
 
 	public boolean opponentMagicHitsLuckier()
 	{
-		double competitorRate = (competitor.getMagicHitCountDeserved() == 0) ? 0 :
-				(competitor.getMagicHitCount() / competitor.getMagicHitCountDeserved());
-		double opponentRate = (opponent.getMagicHitCountDeserved() == 0) ? 0 :
-				(opponent.getMagicHitCount() / opponent.getMagicHitCountDeserved());
+		double competitorRate = (competitor.getMagicHitCountExpected() == 0) ? 0 :
+			(competitor.getMagicHitCount() / competitor.getMagicHitCountExpected());
+		double opponentRate = (opponent.getMagicHitCountExpected() == 0) ? 0 :
+			(opponent.getMagicHitCount() / opponent.getMagicHitCountExpected());
 
 		return opponentRate > competitorRate;
 	}
 
-	public double getCompetitorDeservedDmgDiff()
+	public double getCompetitorExpectedDmgDiff()
 	{
-		return competitor.getDeservedDamage() - opponent.getDeservedDamage();
+		return competitor.getExpectedDamage() - opponent.getExpectedDamage();
 	}
 
 	public double getCompetitorDmgDealtDiff()
@@ -585,7 +592,34 @@ public class FightPerformance implements Comparable<FightPerformance>
 		}
 	}
 
-	public void updateKoChanceStats(FightLogEntry entry)
+	/**
+	 * Generates the fight ID if it hasn't been generated yet and the upload config is enabled.
+	 * Uses both player names, world, and the current game tick as seed material.
+	 */
+	private void ensureFightIdGenerated()
+	{
+		if (fightIdGenerated || !CONFIG.uploadFightsToPvpHub())
+		{
+			return;
+		}
+
+		if (competitor.getName() != null && opponent.getName() != null)
+		{
+			if (initialTime == 0)
+			{
+				initialTime = lastFightTime;
+			}
+			fightId = FightIdGenerator.generateFightId(
+				competitor.getName(),
+				opponent.getName(),
+				world,
+				initialTime
+			);
+			fightIdGenerated = true;
+		}
+	}
+
+    public void updateKoChanceStats(FightLogEntry entry)
 	{
 		if (entry.getDisplayKoChance() == null) { return; }
 

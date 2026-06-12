@@ -35,8 +35,12 @@ import lombok.Getter;
 import lombok.Setter;
 import matsyir.pvpperformancetracker.controllers.PvpDamageCalc;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
+import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GraphicID;
 import net.runelite.api.HeadIcon;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.Player;
 import net.runelite.client.chat.ChatMessageBuilder;
 import org.apache.commons.text.WordUtils;
@@ -92,7 +96,7 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	@Setter
 	@Expose
 	@SerializedName("d")
-	private double deservedDamage;
+	private double expectedDamage; // NOTE: previously referred to as "Deserved damage"
 	@Expose
 	@SerializedName("a")
 	private double accuracy;
@@ -107,7 +111,6 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	@Expose
 	@SerializedName("s")
 	private boolean splash; // true if it was a magic attack and it splashed
-
 	@Expose
 	@SerializedName("C")
 	private CombatLevels attackerLevels; // CAN BE NULL
@@ -157,10 +160,27 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	@Expose
 	@SerializedName("o")
 	private HeadIcon defenderOverhead;
+	@Expose
+	@SerializedName("E")
+	@Setter
+	private boolean defenderElyProc = false;
+	@Expose
+	@SerializedName("S")
+	@Setter
+	private boolean defenderSotdMeleeReductionProc = false;
 
 	@Expose
 	@SerializedName("p")
 	private int attackerOffensivePray; // offensive pray saved as SpriteID since that's all we use it for.
+
+	@Expose
+	@Getter
+	@SerializedName("R")
+	private Integer attackerRingItemId;
+	@Expose
+	@Getter
+	@SerializedName("A")
+	private Integer attackerAmmoItemId;
 
 	@Expose
 	@Getter
@@ -196,6 +216,33 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	@Getter @Setter
 	private boolean isPartOfTickGroup = false;
 
+	// Transient fields for handling multi-tick Dragon Claws special attacks
+	@Getter
+	@Setter
+	private transient Integer clawsPhase1Damage = null;
+	@Getter
+	@Setter
+	private transient Integer clawsHpBeforePhase1 = null;
+	@Getter
+	@Setter
+	private transient Integer clawsHpAfterPhase1 = null;
+	@Getter
+	@Setter
+	private transient Integer clawsHpBeforePhase2 = null;
+	// Transient fields for handling Dark Bow double-hit sequencing
+	@Getter
+	@Setter
+	private transient Integer darkBowHpBeforeHit1 = null;
+	@Getter
+	@Setter
+	private transient Integer darkBowHpAfterHit1 = null;
+	@Getter
+	@Setter
+	private transient Integer darkBowHpBeforeHit2 = null;
+	@Getter
+	@Setter
+	private transient boolean darkBowHitsStacked = false;
+
 	public FightLogEntry(Player attacker, Player defender, PvpDamageCalc pvpDamageCalc, int attackerOffensivePray, CombatLevels levels, CombatLevels defLevels, AnimationData animationData)
 	{
 		this.isFullEntry = true;
@@ -211,12 +258,14 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 		this.attackerGear = attacker.getPlayerComposition().getEquipmentIds();
 		this.attackerOverhead = attacker.getOverheadIcon();
 
-		this.deservedDamage = pvpDamageCalc.getAverageHit();
+		this.expectedDamage = pvpDamageCalc.getAverageHit();
 		this.accuracy = pvpDamageCalc.getAccuracy();
 		this.minHit = pvpDamageCalc.getMinHit();
 		this.maxHit = pvpDamageCalc.getMaxHit();
 		this.splash = animationData.attackStyle == AnimationData.AttackStyle.MAGIC && defender.getGraphic() == GraphicID.SPLASH;
 		this.attackerLevels = levels; // CAN BE NULL
+		this.attackerRingItemId = getLocalPlayerRingItemId(attacker);
+		this.attackerAmmoItemId = getLocalPlayerAmmoItemId(attacker);
 
 		// defender data
 		this.defenderGear = defender.getPlayerComposition().getEquipmentIds();
@@ -240,6 +289,8 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 
 		this.attackerLevels = levels;
 		this.attackerOffensivePray = attackerOffensivePray;
+		this.attackerRingItemId = getLocalPlayerRingItemId(PLUGIN.getClient().getLocalPlayer());
+		this.attackerAmmoItemId = getLocalPlayerAmmoItemId(PLUGIN.getClient().getLocalPlayer());
 		this.actualDamageSum = 0;
 	}
 
@@ -257,12 +308,16 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 		this.attackerGear = e.attackerGear;
 		this.attackerOverhead = e.attackerOverhead;
 		this.animationData = e.animationData;
-		this.deservedDamage = pvpDamageCalc.getAverageHit();
+		this.expectedDamage = pvpDamageCalc.getAverageHit();
 		this.accuracy = pvpDamageCalc.getAccuracy();
 		this.minHit = pvpDamageCalc.getMinHit();
 		this.maxHit = pvpDamageCalc.getMaxHit();
 		this.splash = e.splash;
+		this.defenderElyProc = e.defenderElyProc;
+		this.defenderSotdMeleeReductionProc = e.defenderSotdMeleeReductionProc;
 		this.attackerLevels = e.attackerLevels;
+		this.attackerRingItemId = e.attackerRingItemId;
+		this.attackerAmmoItemId = e.attackerAmmoItemId;
 
 		// defender data
 		this.defenderGear = e.defenderGear;
@@ -273,14 +328,76 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 		this.actualDamageSum = 0;
 	}
 
+	private boolean isLocalPlayer(Player player)
+	{
+		if (player == null)
+		{
+			return false;
+		}
+		Player localPlayer = PLUGIN.getClient().getLocalPlayer();
+		if (localPlayer == null || localPlayer.getName() == null || player.getName() == null)
+		{
+			return false;
+		}
+
+		String localName = localPlayer.getName().replace("\u00a0", " ").replace("_", " ").trim().toUpperCase();
+		String playerName = player.getName().replace("\u00a0", " ").replace("_", " ").trim().toUpperCase();
+
+		return localName.equals(playerName);
+	}
+
+	private Integer getLocalPlayerRingItemId(Player attacker)
+	{
+		if (!isLocalPlayer(attacker))
+		{
+			return null;
+		}
+
+		ItemContainer worn = PLUGIN.getClient().getItemContainer(InventoryID.EQUIPMENT);
+		if (worn == null)
+		{
+			return null;
+		}
+
+		Item ring = worn.getItem(EquipmentInventorySlot.RING.getSlotIdx());
+		if (ring == null || ring.getId() <= 0)
+		{
+			return null;
+		}
+
+		return ring.getId();
+	}
+
+	private Integer getLocalPlayerAmmoItemId(Player attacker)
+	{
+		if (!isLocalPlayer(attacker))
+		{
+			return null;
+		}
+
+		ItemContainer worn = PLUGIN.getClient().getItemContainer(InventoryID.EQUIPMENT);
+		if (worn == null)
+		{
+			return null;
+		}
+
+		Item ammo = worn.getItem(EquipmentInventorySlot.AMMO.getSlotIdx());
+		if (ammo == null || ammo.getId() <= 0)
+		{
+			return null;
+		}
+
+		return ammo.getId();
+	}
+
 	// randomized entry used for testing
-	public FightLogEntry(int [] attackerGear, int deservedDamage, double accuracy, int minHit, int maxHit, int [] defenderGear, String attackerName)
+	public FightLogEntry(int [] attackerGear, int expectedDamage, double accuracy, int minHit, int maxHit, int [] defenderGear, String attackerName)
 	{
 		this.attackerName = attackerName;
 		this.attackerGear = attackerGear;
 		this.attackerOverhead = HeadIcon.MAGIC;
 		this.animationData = Math.random() <= 0.5 ? AnimationData.MELEE_DAGGER_SLASH : AnimationData.MAGIC_ANCIENT_MULTI_TARGET;
-		this.deservedDamage = deservedDamage;
+		this.expectedDamage = expectedDamage;
 		this.accuracy = accuracy;
 		this.minHit = minHit;
 		this.maxHit = maxHit;
@@ -301,20 +418,20 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	{
 		Color darkRed = new Color(127, 0, 0); // same color as default clan chat color
 		return new ChatMessageBuilder()
-				.append(darkRed, attackerName + ": ")
-				.append(Color.BLACK, "Style: ")
-				.append(darkRed, WordUtils.capitalizeFully(animationData.attackStyle.toString()))
-				.append(Color.BLACK, "  Hit: ")
-				.append(darkRed, getHitRange())
-				.append(Color.BLACK, "  Acc: ")
-				.append(darkRed, nf.format(accuracy))
-				.append(Color.BLACK, "  AvgHit: ")
-				.append(darkRed, nf.format(deservedDamage))
-				.append(Color.BLACK, " Spec?: ")
-				.append(darkRed, animationData.isSpecial ? "Y" : "N")
-				.append(Color.BLACK, " OffP?:")
-				.append(darkRed, success() ? "Y" : "N")
-				.build();
+			.append(darkRed, attackerName + ": ")
+			.append(Color.BLACK, "Style: ")
+			.append(darkRed, WordUtils.capitalizeFully(animationData.attackStyle.toString()))
+			.append(Color.BLACK, "  Hit: ")
+			.append(darkRed, getHitRange())
+			.append(Color.BLACK, "  Acc: ")
+			.append(darkRed, nf.format(accuracy))
+			.append(Color.BLACK, "  AvgHit: ")
+			.append(darkRed, nf.format(expectedDamage))
+			.append(Color.BLACK, " Spec?: ")
+			.append(darkRed, animationData.isSpecial ? "Y" : "N")
+			.append(Color.BLACK, " OffP?:")
+			.append(darkRed, success() ? "Y" : "N")
+			.build();
 	}
 
 	public String getHitRange()

@@ -151,12 +151,12 @@ public class FightAnalysisFrame extends JFrame
 			"get more accurate stats about the fight, since some data is only available client-side. Both data " +
 			"entries should come from the same fight, but from two different clients. Fighter 2 is Fighter 1's " +
 			"opponent. Right click a fight in order to copy its data.<br/><br/>" +
-			"When using this, the following stats are applied to deserved damage & deserved magic hits:<br/>" +
+			"When using this, the following stats are applied to expected damage & expected magic hits:<br/>" +
 			"&nbsp;&nbsp;&mdash; Offensive prayers, instead of always being correct<br/>" +
 			"&nbsp;&nbsp;&mdash; Boosted or drained levels (e.g from brewing down), instead of using config stats or fixed LMS stats<br/>" +
 			"&nbsp;&nbsp;&mdash; The magic defence buff from Augury, instead of assuming Piety/Rigour while getting maged (if it's used)" +
 			"<br><br><strong>Note: </strong>For now, ghost barrages are not integrated into this, the above improvements " +
-			"do not apply for its deserved damage, and its deserved damage is not included in the main deserved damage " +
+			"do not apply for its expected damage, and its expected damage is not included in the main expected damage " +
 			"stat. It merely displays what each client had saved.</html>");
 		instructionLabel.setForeground(Color.WHITE);
 		instructionLabel.setSize(mainPanel.getWidth(), instructionLabel.getHeight());
@@ -183,8 +183,10 @@ public class FightAnalysisFrame extends JFrame
 
 		// setup drag & drop file upload support directly into textbox
 		// https://stackoverflow.com/a/9111327/7982774
-		mainFightJsonInput.setDropTarget(new DropTarget() {
-			public synchronized void drop(DropTargetDropEvent evt) {
+		mainFightJsonInput.setDropTarget(new DropTarget()
+		{
+			public synchronized void drop(DropTargetDropEvent evt)
+			{
 				try
 				{
 					evt.acceptDrop(DnDConstants.ACTION_COPY);
@@ -214,8 +216,10 @@ public class FightAnalysisFrame extends JFrame
 		opponentFightJsonInput.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
 		// setup drag & drop file upload support directly into textbox
-		opponentFightJsonInput.setDropTarget(new DropTarget() {
-			public synchronized void drop(DropTargetDropEvent evt) {
+		opponentFightJsonInput.setDropTarget(new DropTarget()
+		{
+			public synchronized void drop(DropTargetDropEvent evt)
+			{
 				try
 				{
 					evt.acceptDrop(DnDConstants.ACTION_COPY);
@@ -293,7 +297,7 @@ public class FightAnalysisFrame extends JFrame
 			PLUGIN.initializeImportedFight(mainFight);
 			PLUGIN.initializeImportedFight(opponentFight);
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			PLUGIN.createConfirmationModal(false, "Error while parsing fight data.");
 			return false;
@@ -308,7 +312,10 @@ public class FightAnalysisFrame extends JFrame
 	{
 		boolean fightsValid = parseFights();
 		// parseFights includes error messages if the parse fails
-		if (!fightsValid) { return; }
+		if (!fightsValid)
+		{
+			return;
+		}
 
 		try
 		{
@@ -316,7 +323,7 @@ public class FightAnalysisFrame extends JFrame
 			analyzedFight = new AnalyzedFightPerformance(mainFight, opponentFight, this::displayAnalysis);
 			// now that we've got the merged fight, display results, this is done with the displayAnalysis callback
 		}
-		catch(Exception e)
+		catch (Exception e)
 		{
 			log.info("Error during fight analysis - could not merge fights. Exception tack trace: ", e);
 			PLUGIN.createConfirmationModal(false, "<html>Error while merging fights. Unable to analyze.<br/>If you think this should have been valid, feel free to submit<br/>an issue on the github repo, and include client logs.</html>");

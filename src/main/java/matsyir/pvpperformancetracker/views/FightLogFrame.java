@@ -27,6 +27,7 @@ package matsyir.pvpperformancetracker.views;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.math.RoundingMode;
@@ -52,11 +53,14 @@ import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
 
 import matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils;
+import net.runelite.api.ItemID;
 import net.runelite.api.SpriteID;
 
 @Slf4j
 public class FightLogFrame extends JFrame
 {
+	private static JFrame fightLogFrame; // save frame as static instance so there's only one at a time, to avoid window clutter.
+
 	private static final NumberFormat nf = NumberFormat.getInstance();
 	private static final NumberFormat nfPercent = NumberFormat.getPercentInstance(); // For KO Chance %
 
@@ -76,8 +80,38 @@ public class FightLogFrame extends JFrame
 	private ListSelectionListener onRowSelected;
 	private ArrayList<FightLogEntry> fightLogEntries;
 
+	public static JFrame createFightLogFrame(FightPerformance fight, AnalyzedFightPerformance analyzedFight, JRootPane rootPane)
+	{
+		// destroy current frame if it exists so we only have one at a time (static field)
+		if (fightLogFrame != null)
+		{
+			fightLogFrame.dispose();
+		}
+
+		// show error modal if the fight has no log entries to display.
+		ArrayList<FightLogEntry> fightLogEntries = new ArrayList<>(fight.getAllFightLogEntries());
+		fightLogEntries.removeIf(e -> !e.isFullEntry());
+		if (fightLogEntries.isEmpty())
+		{
+			PLUGIN.createConfirmationModal(false, "This fight has no attack logs to display, or the data is outdated.");
+		}
+		else if (analyzedFight != null) // if analyzed fight is set, then show an analyzed fight's fightLogFrame.
+		{
+			fightLogFrame = new FightLogFrame(analyzedFight, rootPane);
+
+		}
+		else
+		{
+			fightLogFrame = new FightLogFrame(fight,
+				fightLogEntries,
+				rootPane);
+		}
+
+		return fightLogFrame;
+	}
+
 	// expects logEntries composing of only "full" log entries, that contain full attack data, not defender entries.
-	FightLogFrame(FightPerformance fight, ArrayList<FightLogEntry> logEntries, JRootPane rootPane)
+	private FightLogFrame(FightPerformance fight, ArrayList<FightLogEntry> logEntries, JRootPane rootPane)
 	{
 		//String title = fight.getCompetitor().getName() + " vs " + fight.getOpponent().getName();
 		super("Fight Log - " + fight.getCompetitor().getName() + " vs " + fight.getOpponent().getName()
@@ -118,7 +152,7 @@ public class FightLogFrame extends JFrame
 			stats[i][1] = styleIconLabel;
 			stats[i][2] = fightEntry.getHitRange();
 			stats[i][3] = nf.format(fightEntry.getAccuracy() * 100) + '%';
-			stats[i][4] = nf.format(fightEntry.getDeservedDamage());
+			stats[i][4] = nf.format(fightEntry.getExpectedDamage());
 			// Actual Dmg column (Index 5)
 			JLabel dmgLabel = new JLabel();
 			if (fightEntry.getAnimationData().attackStyle == AnimationData.AttackStyle.MAGIC && fightEntry.isSplash())
@@ -146,15 +180,60 @@ public class FightLogFrame extends JFrame
 			stats[i][9] = fightEntry.success() ? "✔" : "";
 			// Def Prayer (Index 10)
 			int prayIcon = PvpPerformanceTrackerUtils.getSpriteForHeadIcon(fightEntry.getDefenderOverhead());
-			if (prayIcon > 0)
+			boolean hasPray = prayIcon > 0;
+			boolean hasEly = fightEntry.isDefenderElyProc();
+			boolean hasStaffReduction = fightEntry.isDefenderSotdMeleeReductionProc();
+
+			if (!hasPray && !hasEly && !hasStaffReduction)
 			{
-				JLabel defPrayLabel = new JLabel();
-				PLUGIN.addSpriteToLabelIfValid(defPrayLabel, prayIcon, this::repaint);
-				stats[i][10] = defPrayLabel;
+				stats[i][10] = "";
+			}
+			else if ((hasPray ? 1 : 0) + (hasEly ? 1 : 0) + (hasStaffReduction ? 1 : 0) == 1)
+			{
+				JLabel label = new JLabel();
+				if (hasPray)
+				{
+					PLUGIN.addSpriteToLabelIfValid(label, prayIcon, this::repaint);
+					label.setToolTipText("Defensive Prayer");
+				}
+				else if (hasEly)
+				{
+					PLUGIN.addItemToLabelIfValid(label, ItemID.ELYSIAN_SPIRIT_SHIELD, false, this::repaint, "Elysian proc");
+				}
+				else
+				{
+					PLUGIN.addItemToLabelIfValid(label, ItemID.STAFF_OF_THE_DEAD, false, this::repaint, "Staff spec damage reduction");
+				}
+				stats[i][10] = label;
 			}
 			else
 			{
-				stats[i][10] = "";
+				JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+				panel.setOpaque(false);
+
+				if (hasPray)
+				{
+					JLabel defPrayLabel = new JLabel();
+					PLUGIN.addSpriteToLabelIfValid(defPrayLabel, prayIcon, this::repaint);
+					defPrayLabel.setToolTipText("Defensive Prayer");
+					panel.add(defPrayLabel);
+				}
+
+				if (hasEly)
+				{
+					JLabel elyLabel = new JLabel();
+					PLUGIN.addItemToLabelIfValid(elyLabel, ItemID.ELYSIAN_SPIRIT_SHIELD, false, this::repaint, "Elysian proc");
+					panel.add(elyLabel);
+				}
+
+				if (hasStaffReduction)
+				{
+					JLabel staffLabel = new JLabel();
+					PLUGIN.addItemToLabelIfValid(staffLabel, ItemID.STAFF_OF_THE_DEAD, false, this::repaint, "Staff spec damage reduction");
+					panel.add(staffLabel);
+				}
+
+				stats[i][10] = panel;
 			}
 			// Splash (Index 11)
 			if (fightEntry.getAnimationData().attackStyle == AnimationData.AttackStyle.MAGIC)
@@ -191,11 +270,12 @@ public class FightLogFrame extends JFrame
 			i++;
 		}
 
-		String[] header = { "Attacker", "Style", "Hit Range", "Accuracy", "Avg Hit", "Actual Dmg", "HP", "KO Chance", "Special?",
-		"Off-Pray?", "Def Prayer", "Splash", "Offensive Pray", "Time, (Tick)" };
+		String[] header = {"Attacker", "Style", "Hit Range", "Accuracy", "Avg Hit", "Actual Dmg", "HP", "KO Chance", "Special?",
+			"Off-Pray?", "Def Prayer", "Splash", "Offensive Pray", "Time, (Tick)"};
 		table = new JTable(stats, header);
 		table.setRowHeight(30);
 		table.setDefaultEditor(Object.class, null);
+		table.getColumnModel().getColumn(10).setPreferredWidth(96); // room for def pray + proc icons
 
 		table.getColumnModel().getColumn(1).setCellRenderer(new BufferedImageCellRenderer()); // Style
 		table.getColumnModel().getColumn(5).setCellRenderer(new BufferedImageCellRenderer()); // Actual Dmg
@@ -222,7 +302,7 @@ public class FightLogFrame extends JFrame
 				new Point( // place the new detail frame roughly to the right of the fight log window.
 					this.getLocation().x + this.getSize().width,
 					this.getLocation().y)
-				);
+			);
 		};
 
 		table.getSelectionModel().addListSelectionListener(onRowSelected);
@@ -233,20 +313,27 @@ public class FightLogFrame extends JFrame
 		setVisible(true);
 	}
 
-	static class BufferedImageCellRenderer extends DefaultTableCellRenderer
+	private static class BufferedImageCellRenderer extends DefaultTableCellRenderer
 	{
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column)
 		{
 			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-			if (value instanceof BufferedImage)
+			if (value instanceof JPanel)
+			{
+				JPanel panel = (JPanel) value;
+				panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+				panel.setOpaque(true);
+				return panel;
+			}
+			else if (value instanceof BufferedImage)
 			{
 				setText("");
-				setIcon(new ImageIcon((BufferedImage)value));
+				setIcon(new ImageIcon((BufferedImage) value));
 			}
 			else if (value instanceof JLabel)
 			{
-				JLabel val = (JLabel)value;
+				JLabel val = (JLabel) value;
 				setIcon(val.getIcon());
 				setText(val.getText());
 				setToolTipText(val.getToolTipText());
@@ -263,12 +350,12 @@ public class FightLogFrame extends JFrame
 
 	// initialize frame using an AnalyzedFight, in order to pass the analyzed fight data
 	// to the detailed frame.
-	FightLogFrame(AnalyzedFightPerformance fight, JRootPane rootPane)
+	private FightLogFrame(AnalyzedFightPerformance fight, JRootPane rootPane)
 	{
 		this(fight,
 			new ArrayList(fight.getAllFightLogEntries().stream()
 				.filter(FightLogEntry::isFullEntry) // send only attacker logs, and don't use the matching logs since
-				.collect(Collectors.toList())),	// those have old 'dps' values, they're only used for defender lvls/pray/etc client data
+				.collect(Collectors.toList())),    // those have old 'dps' values, they're only used for defender lvls/pray/etc client data
 			rootPane);
 
 		// test
@@ -276,7 +363,7 @@ public class FightLogFrame extends JFrame
 			.filter(FightLogEntry::isFullEntry) // send only attacker logs
 			.collect(Collectors.toList())).size() != fight.getAnalyzedMatchingLogs().size())
 		{
-			 log.info("FIGHT ANALYSIS: ERROR! allFightLogEntries.filter::isFullEntry different size than analyzedMatchingLogs - should not happen");
+			log.info("FIGHT ANALYSIS: ERROR! allFightLogEntries.filter::isFullEntry different size than analyzedMatchingLogs - should not happen");
 		}
 
 		table.getSelectionModel().removeListSelectionListener(onRowSelected);
@@ -285,7 +372,10 @@ public class FightLogFrame extends JFrame
 
 			if (fightLogDetailFrame != null)
 			{
-				if (fightLogDetailFrame.rowIdx == row) { return; }
+				if (fightLogDetailFrame.rowIdx == row)
+				{
+					return;
+				}
 
 				fightLogDetailFrame.dispose();
 				fightLogDetailFrame = null;

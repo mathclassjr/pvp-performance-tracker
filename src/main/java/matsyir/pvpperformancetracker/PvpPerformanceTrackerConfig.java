@@ -24,6 +24,7 @@
  */
 package matsyir.pvpperformancetracker;
 
+import lombok.Getter;
 import matsyir.pvpperformancetracker.models.RangeAmmoData;
 import matsyir.pvpperformancetracker.models.RingData;
 import net.runelite.client.config.Config;
@@ -131,6 +132,18 @@ public interface PvpPerformanceTrackerConfig extends Config
 		return RobeHitFilter.EITHER;
 	}
 
+	@ConfigItem(
+		keyName = "uploadFightsToPvpHub",
+		name = "Upload Fights to PvP-Hub.com",
+		description = "When enabled, fights will be assigned a shared ID and uploaded to PvP-Hub.com after they end.",
+		warning = "This feature will submit your RSN, fight logs, and IP address to a 3rd-party server not controlled or verified by Runelite developers.",
+		position = 1200
+	)
+	default boolean uploadFightsToPvpHub()
+	{
+		return false;
+	}
+
 	// ================================= Overlay =================================
 
 	@ConfigItem(
@@ -182,13 +195,13 @@ public interface PvpPerformanceTrackerConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showOverlayDeservedDmg",
-		name = "Overlay: Show Deserved Dmg",
-		description = "The overlay will display deserved damage & difference.<br>Max. of 5 lines on the overlay",
+		keyName = "showOverlayDeservedDmg", // Not renaming this key so users keep their config.
+		name = "Overlay: Show Expected Dmg", // Note: Used to be called Deserved Damage.
+		description = "The overlay will display expected damage & difference.<br>Max. of 5 lines on the overlay",
 		position = 7000,
 		section = overlay
 	)
-	default boolean showOverlayDeservedDmg()
+	default boolean showOverlayExpectedDmg()
 	{
 		return true;
 	}
@@ -208,7 +221,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "showOverlayMagicHits",
 		name = "Overlay: Show Magic Hits",
-		description = "The overlay will display successful magic hits & deserved magic hits.<br>Max. of 5 lines on the overlay",
+		description = "The overlay will display successful magic hits & expected magic hits.<br>Max. of 5 lines on the overlay",
 		position = 9000,
 		section = overlay
 	)
@@ -294,7 +307,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "ringChoice",
 		name = "Ring Used",
-		description = "Rings used for the deserved damage calculations outside of LMS.",
+		description = "Rings used for the expected damage calculations outside of LMS.",
 		position = 11000,
 		section = gearAmmo
 	)
@@ -306,7 +319,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "boltChoice",
 		name = "RCB Ammo",
-		description = "Bolts used for rune crossbow's deserved damage calculation." +
+		description = "Bolts used for rune crossbow's expected damage calculation." +
 			"<br>LMS fights always use diamond (e). Dragonfire protection not accounted for.",
 		position = 12000,
 		section = gearAmmo
@@ -319,7 +332,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "strongBoltChoice",
 		name = "ACB/DCB/DHCB Ammo",
-		description = "Bolts used for ACB/DCB/DHCB's deserved damage calculation." +
+		description = "Bolts used for ACB/DCB/DHCB's expected damage calculation." +
 			"<br>LMS fights always use regular diamond (e). Dragonfire protection not accounted for.",
 		position = 13000,
 		section = gearAmmo
@@ -332,7 +345,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "bpDartChoice",
 		name = "Blowpipe Ammo",
-		description = "Darts used for blowpipe deserved damage calculation.",
+		description = "Darts used for blowpipe expected damage calculation.",
 		position = 14000,
 		section = gearAmmo
 	)
@@ -350,7 +363,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "attackLevel",
 		name = "Attack Level",
-		description = "Attack level used for the deserved damage calculations outside of LMS (includes potion boost).",
+		description = "Attack level used for the expected damage calculations outside of LMS (includes potion boost).",
 		position = 16000,
 		section = levels
 	)
@@ -366,7 +379,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "strengthLevel",
 		name = "Strength Level",
-		description = "Strength level used for the deserved damage calculations outside of LMS (includes potion boost).",
+		description = "Strength level used for the expected damage calculations outside of LMS (includes potion boost).",
 		position = 17000,
 		section = levels
 	)
@@ -382,7 +395,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "defenceLevel",
 		name = "Defence Level",
-		description = "Defence level used for the deserved damage calculations outside of LMS (includes potion boost).",
+		description = "Defence level used for the expected damage calculations outside of LMS (includes potion boost).",
 		position = 18000,
 		section = levels
 	)
@@ -398,7 +411,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "rangedLevel",
 		name = "Ranged Level",
-		description = "Ranged level used for the deserved damage calculations outside of LMS (includes potion boost).",
+		description = "Ranged level used for the expected damage calculations outside of LMS (includes potion boost).",
 		position = 19000,
 		section = levels
 	)
@@ -414,7 +427,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "magicLevel",
 		name = "Magic Level",
-		description = "Magic level used for the deserved damage calculations outside of LMS (includes potion boost).",
+		description = "Magic level used for the expected damage calculations outside of LMS (includes potion boost).",
 		position = 20000,
 		section = levels
 	)
@@ -486,7 +499,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	@ConfigItem(
 		keyName = "dlongIsVls",
 		name = "Dlong = VLS",
-		description = "Track Dragon Longsword & its spec as a Vesta's Longsword for deserved damage." +
+		description = "Track Dragon Longsword & its spec as a Vesta's Longsword for expected damage." +
 			"<br>Requested/used for for DMM practice purposes.",
 		position = 23000
 	)
@@ -532,31 +545,16 @@ public interface PvpPerformanceTrackerConfig extends Config
 
 
 	// ================================= On-update flags for chat message update summaries =================================
+	// to avoid spamming multiple update messages for a user who was inactive, just use and overwrite one at a time.
+	String updateMsgKey = "updateMsgShown1_7_4";
 	@ConfigItem(
-			keyName = "updateNoteMay72025Shown_v2", // for 1.6.1 -> 1.6.2
-			name = "Update Note May 7 2025 Shown v2",
-			description = "Tracks if the update note for May 7 2025 (v2) has been shown.",
-			hidden = true
+		keyName = updateMsgKey,
+		name = "Update Msg flag for most recent update",
+		description = "Tracks if the update chat message for the most recent update has been shown.",
+		hidden = true
 	)
-	default boolean updateNoteMay72025Shown_v2()
+	default boolean updateMsgShown1_7_4()
 	{
 		return false;
 	}
-	String updateNoteMay72025Shown_v2_MESSAGE = "PvP Performance Tracker 1.6.2 Update: " +
-			"Improved KO chance accuracy, added double gmaul support, " +
-			"fixed eclipse atlatl damage, added abyssal dagger spec.";
-
-	@ConfigItem(
-			keyName = "updateNote1_7_0", // for 1.6.2 -> 1.7.0
-			name = "Update Note 1.6.2->1.7.0 ~Jun06 2025",
-			description = "Tracks if the update note for 1.7.0 has been shown.",
-			hidden = true
-	)
-	default boolean updateNote1_7_0()
-	{
-		return false;
-	}
-	String updateNote1_7_0_MESSAGE = "PvP Performance Tracker 1.7.0 Update: " +
-			"New statistic - 'hit on robe' tracking, various calculation & detection improvements, " +
-			"display fight worlds, new attack summary window.";
 }

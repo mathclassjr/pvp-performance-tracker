@@ -42,10 +42,13 @@ import matsyir.pvpperformancetracker.models.AnimationData;
 import matsyir.pvpperformancetracker.models.CombatLevels;
 import matsyir.pvpperformancetracker.models.EquipmentData;
 import matsyir.pvpperformancetracker.models.FightLogEntry;
+import net.runelite.api.ActorSpotAnim;
+import net.runelite.api.GraphicID;
+import net.runelite.api.IterableHashTable;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
+import net.runelite.api.gameval.SpotanimID;
 import net.runelite.api.kit.KitType;
-import net.runelite.api.GraphicID;
 
 @Slf4j
 @Getter
@@ -76,8 +79,8 @@ class Fighter
 	private int offPraySuccessCount; // total number of successful off-pray attacks
 	// (when you use a different combat style than your opponent's overhead)
 	@Expose
-	@SerializedName("d")
-	private double deservedDamage; // total deserved damage based on gear & opponent's pray
+	@SerializedName("d") // NOTE: previously referred to as "Deserved damage"
+	private double expectedDamage; // total expected damage based on gear & opponent's pray
 	@Expose
 	@SerializedName("h") // h for "hitsplats", real hits
 	private int damageDealt; // actual damage dealt based on opponent's hitsplats
@@ -90,7 +93,7 @@ class Fighter
 	private int magicHitCount; // count of 'successful' magic hits (where you don't splash)
 	@Expose
 	@SerializedName("M")
-	private double magicHitCountDeserved; // cumulative magic accuracy percentage for each attack
+	private double magicHitCountExpected; // cumulative magic accuracy percentage for each attack
 
 	@Expose
 	@SerializedName("p")
@@ -101,7 +104,7 @@ class Fighter
 	private int ghostBarrageCount;
 	@Expose
 	@SerializedName("y")
-	private double ghostBarrageDeservedDamage;
+	private double ghostBarrageExpectedDamage;
 
 	@Expose
 	@SerializedName("H")
@@ -134,11 +137,11 @@ class Fighter
 		name = player.getName();
 		attackCount = 0;
 		offPraySuccessCount = 0;
-		deservedDamage = 0;
+		expectedDamage = 0;
 		damageDealt = 0;
 		totalMagicAttackCount = 0;
 		magicHitCount = 0;
-		magicHitCountDeserved = 0;
+		magicHitCountExpected = 0;
 		offensivePraySuccessCount = 0;
 		dead = false;
 		pvpDamageCalc = new PvpDamageCalc(fight);
@@ -153,11 +156,11 @@ class Fighter
 		this.name = name;
 		attackCount = 0;
 		offPraySuccessCount = 0;
-		deservedDamage = 0;
+		expectedDamage = 0;
 		damageDealt = 0;
 		totalMagicAttackCount = 0;
 		magicHitCount = 0;
-		magicHitCountDeserved = 0;
+		magicHitCountExpected = 0;
 		dead = false;
 		pvpDamageCalc = new PvpDamageCalc(fight);
 		fightLogEntries = logs;
@@ -172,11 +175,11 @@ class Fighter
 		this.name = name;
 		attackCount = 0;
 		offPraySuccessCount = 0;
-		deservedDamage = 0;
+		expectedDamage = 0;
 		damageDealt = 0;
 		totalMagicAttackCount = 0;
 		magicHitCount = 0;
-		magicHitCountDeserved = 0;
+		magicHitCountExpected = 0;
 		dead = false;
 		pvpDamageCalc = null;
 		fightLogEntries = new ArrayList<>();
@@ -211,24 +214,25 @@ class Fighter
 
 		// Granite Maul specific handling
 		boolean isGmaulSpec = animationData == AnimationData.MELEE_GRANITE_MAUL_SPEC;
+		boolean elyProc = hasTargetSpotAnim(opponent, SpotanimID.ELYSIAN_SHIELD_DEFEND_SPOTANIM);
 
 		// --- Detect dark bow & dragon crossbow specials via GFX ---
 		if (weapon == EquipmentData.DARK_BOW && animationData == AnimationData.RANGED_SHORTBOW)
 		{
-			boolean spec = opponent.getGraphic() == GFX_TARGET_DBOW_SPEC;
+			boolean spec = hasTargetSpotAnim(opponent, GFX_TARGET_DBOW_SPEC);
 
 			animationData = spec ? AnimationData.RANGED_DARK_BOW_SPEC : AnimationData.RANGED_DARK_BOW;
 		}
 		else if (weapon == EquipmentData.DRAGON_CROSSBOW &&
 				(animationData == AnimationData.RANGED_CROSSBOW_PVP || animationData == AnimationData.RANGED_RUNE_CROSSBOW))
 		{
-			boolean spec = opponent.getGraphic() == GFX_TARGET_DCBOW_SPEC;
+			boolean spec = hasTargetSpotAnim(opponent, GFX_TARGET_DCBOW_SPEC);
 
 			if (spec)
 			{
 				animationData = AnimationData.RANGED_DRAGON_CROSSBOW_SPEC;
 			}
-		}
+			}
 
 		attackCount++;
 		if (successful)
@@ -251,13 +255,27 @@ class Fighter
 			animationData = animationData.isSpecial ? AnimationData.MELEE_VLS_SPEC : AnimationData.MELEE_SCIM_SLASH;
 		}
 
-		pvpDamageCalc.updateDamageStats(player, opponent, successful, animationData, levels, opponentLevels);
-		deservedDamage += pvpDamageCalc.getAverageHit();
+		boolean staffMeleeReduction = false;
+		if (animationData.attackStyle.isMelee())
+		{
+			staffMeleeReduction = hasStaffMeleeReduction(opponent);
+		}
+
+		pvpDamageCalc.updateDamageStats(player, opponent, successful, animationData);
+		if (elyProc)
+		{
+			pvpDamageCalc.applyElysianReduction();
+		}
+		if (staffMeleeReduction)
+		{
+			pvpDamageCalc.applyStaffMeleeReduction();
+		}
+		expectedDamage += pvpDamageCalc.getAverageHit();
 
 		if (animationData.attackStyle == AnimationData.AttackStyle.MAGIC)
 		{
 			totalMagicAttackCount++;
-			magicHitCountDeserved += pvpDamageCalc.getAccuracy();
+			magicHitCountExpected += pvpDamageCalc.getAccuracy();
 
 			if (opponent.getGraphic() != GraphicID.SPLASH)
 			{
@@ -266,7 +284,13 @@ class Fighter
 		}
 
 		FightLogEntry fightLogEntry = new FightLogEntry(player, opponent, pvpDamageCalc, offensivePray, levels, opponentLevels, animationData);
+		fightLogEntry.setDefenderElyProc(elyProc);
+		fightLogEntry.setDefenderSotdMeleeReductionProc(staffMeleeReduction);
 		fightLogEntry.setGmaulSpecial(isGmaulSpec);
+		if (animationData.isSpecial && animationData != AnimationData.MELEE_GRANITE_MAUL_SPEC)
+		{
+			PvpPerformanceTrackerPlugin.PLUGIN.recordNonGmaulSpecial(player.getName(), fightLogEntry.getTick());
+		}
 		if (PvpPerformanceTrackerPlugin.CONFIG.fightLogInChat())
 		{
 			PvpPerformanceTrackerPlugin.PLUGIN.sendTradeChatMessage(fightLogEntry.toChatMessage());
@@ -289,12 +313,12 @@ class Fighter
 		}
 
 		pvpDamageCalc.updateDamageStats(logEntry, defenderLog);
-		deservedDamage += pvpDamageCalc.getAverageHit();
+		expectedDamage += pvpDamageCalc.getAverageHit();
 
 		if (logEntry.getAnimationData().attackStyle == AnimationData.AttackStyle.MAGIC)
 		{
 			totalMagicAttackCount++;
-			magicHitCountDeserved += pvpDamageCalc.getAccuracy();
+			magicHitCountExpected += pvpDamageCalc.getAccuracy();
 			// actual magicHitCount is directly added, as it can no longer
 			// be detected and should have been accurate initially.
 		}
@@ -314,33 +338,33 @@ class Fighter
 		pvpDamageCalc.updateDamageStats(player, opponent, successful, animationData, levels, levels);
 
 		ghostBarrageCount++;
-		ghostBarrageDeservedDamage += pvpDamageCalc.getAverageHit();
+		ghostBarrageExpectedDamage += pvpDamageCalc.getAverageHit();
 
 		// TODO: Create separate FightLog array for ghost barrages and include those in fight log table
 		// ^^^ also so they could be used in fight analysis/merge. Unused params will be used for this
 	}
 
 	// used to manually build Fighters in AnalyzedFightPerformance.
-	public void setTotalGhostBarrageStats(int ghostBarrageCount, double ghostBarrageDeservedDamage)
+	public void setTotalGhostBarrageStats(int ghostBarrageCount, double ghostBarrageExpectedDamage)
 	{
 		this.ghostBarrageCount = ghostBarrageCount;
-		this.ghostBarrageDeservedDamage = ghostBarrageDeservedDamage;
+		this.ghostBarrageExpectedDamage = ghostBarrageExpectedDamage;
 	}
 
 	// this is to be used from the TotalStatsPanel which saves a total of multiple fights.
-	public void addAttacks(int success, int total, double deservedDamage, int damageDealt, int totalMagicAttackCount, int magicHitCount, double magicHitCountDeserved, int offensivePraySuccessCount, int hpHealed, int ghostBarrageCount, double ghostBarrageDeservedDamage)
+	public void addAttacks(int success, int total, double expectedDamage, int damageDealt, int totalMagicAttackCount, int magicHitCount, double magicHitCountExpected, int offensivePraySuccessCount, int hpHealed, int ghostBarrageCount, double ghostBarrageExpectedDamage)
 	{
 		offPraySuccessCount += success;
 		attackCount += total;
-		this.deservedDamage += deservedDamage;
+		this.expectedDamage += expectedDamage;
 		this.damageDealt += damageDealt;
 		this.totalMagicAttackCount += totalMagicAttackCount;
 		this.magicHitCount += magicHitCount;
-		this.magicHitCountDeserved += magicHitCountDeserved;
+		this.magicHitCountExpected += magicHitCountExpected;
 		this.offensivePraySuccessCount += offensivePraySuccessCount;
 		this.hpHealed += hpHealed;
 		this.ghostBarrageCount += ghostBarrageCount;
-		this.ghostBarrageDeservedDamage += ghostBarrageDeservedDamage;
+		this.ghostBarrageExpectedDamage += ghostBarrageExpectedDamage;
 	}
 
 	void addDamageDealt(int damage)
@@ -362,6 +386,40 @@ class Fighter
 	void died()
 	{
 		dead = true;
+	}
+
+	private static boolean hasTargetSpotAnim(Player opponent, int spotAnimId)
+	{
+		if (opponent.getGraphic() == spotAnimId)
+		{
+			return true;
+		}
+
+		IterableHashTable<ActorSpotAnim> spotAnims = opponent.getSpotAnims();
+		if (spotAnims == null)
+		{
+			return false;
+		}
+
+		for (ActorSpotAnim spotAnim : spotAnims)
+		{
+			if (spotAnim != null && spotAnim.getId() == spotAnimId)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean hasStaffMeleeReduction(Player opponent)
+	{
+		return hasTargetSpotAnim(opponent, SpotanimID.SOTD_SPECIAL_START) ||
+			hasTargetSpotAnim(opponent, SpotanimID.SOTD_SPECIAL_EXTRA) ||
+			hasTargetSpotAnim(opponent, SpotanimID.STAFF_OF_LIGHT_SPECIAL_START) ||
+			hasTargetSpotAnim(opponent, SpotanimID.STAFF_OF_LIGHT_SPECIAL_EXTRA) ||
+			hasTargetSpotAnim(opponent, SpotanimID.STAFF_OF_BALANCE_SPECIAL_START) ||
+			hasTargetSpotAnim(opponent, SpotanimID.STAFF_OF_BALANCE_SPECIAL_EXTRA);
 	}
 
 	AnimationData getAnimationData()
@@ -398,9 +456,9 @@ class Fighter
 		long magicAttackCount = getMagicAttackCount();
 		stats += "/" + nf.format(magicAttackCount);
 		nf.setMaximumFractionDigits(1);
-		String luckPercentage = magicHitCountDeserved != 0 ?
-				nf.format(((double)magicHitCount / magicHitCountDeserved) * 100.0) :
-				"0";
+		String luckPercentage = magicHitCountExpected != 0 ?
+			nf.format(((double)magicHitCount / magicHitCountExpected) * 100.0) :
+			"0";
 		stats += " (" + luckPercentage + "%)";
 		return stats;
 	}
@@ -408,21 +466,21 @@ class Fighter
 	public String getShortMagicHitStats()
 	{
 		nf.setMaximumFractionDigits(1);
-		return magicHitCountDeserved != 0 ?
-				nf.format(((double)magicHitCount / magicHitCountDeserved) * 100.0) + "%" :
-				"0%";
+		return magicHitCountExpected != 0 ?
+			nf.format(((double)magicHitCount / magicHitCountExpected) * 100.0) + "%" :
+			"0%";
 	}
 
-	public String getDeservedDmgString(Fighter opponent, int precision, boolean onlyDiff)
+	public String getExpectedDmgString(Fighter opponent, int precision, boolean onlyDiff)
 	{
 		nf.setMaximumFractionDigits(precision);
-		double difference = deservedDamage - opponent.deservedDamage;
+		double difference = expectedDamage - opponent.expectedDamage;
 		return onlyDiff ? (difference > 0 ? "+" : "") + nf.format(difference) :
-				nf.format(deservedDamage) + " (" + (difference > 0 ? "+" : "") + nf.format(difference) + ")";
+			nf.format(expectedDamage) + " (" + (difference > 0 ? "+" : "") + nf.format(difference) + ")";
 	}
-	public String getDeservedDmgString(Fighter opponent)
+	public String getExpectedDmgString(Fighter opponent)
 	{
-		return getDeservedDmgString(opponent, 0, false);
+		return getExpectedDmgString(opponent, 0, false);
 	}
 
 
@@ -472,7 +530,7 @@ class Fighter
 
 	public String getGhostBarrageStats()
 	{
-		return ghostBarrageCount + " G.B. (" + nf.format(ghostBarrageDeservedDamage) + ")";
+		return ghostBarrageCount + " G.B. (" + nf.format(ghostBarrageExpectedDamage) + ")";
 	}
 
 	public void resetRobeHits()
