@@ -48,13 +48,12 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.CONFIG;
+import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
+import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
 import matsyir.pvpperformancetracker.controllers.AnalyzedFightPerformance;
 import matsyir.pvpperformancetracker.controllers.FightPerformance;
 import matsyir.pvpperformancetracker.controllers.Fighter;
-import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
-
 import matsyir.pvpperformancetracker.models.TrackedStatistic;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;

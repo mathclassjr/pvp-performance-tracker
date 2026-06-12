@@ -37,11 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 import matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.CONFIG;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
-import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
 import matsyir.pvpperformancetracker.models.AnimationData;
 import matsyir.pvpperformancetracker.models.CombatLevels;
 import matsyir.pvpperformancetracker.models.EquipmentData;
 import matsyir.pvpperformancetracker.models.FightLogEntry;
+import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
 import net.runelite.api.ActorSpotAnim;
 import net.runelite.api.GraphicID;
 import net.runelite.api.IterableHashTable;
@@ -56,6 +56,7 @@ public
 class Fighter
 {
 	private static final NumberFormat nf = NumberFormat.getInstance();
+
 	static // initialize number format
 	{
 		nf.setMaximumFractionDigits(1);
@@ -224,7 +225,7 @@ class Fighter
 			animationData = spec ? AnimationData.RANGED_DARK_BOW_SPEC : AnimationData.RANGED_DARK_BOW;
 		}
 		else if (weapon == EquipmentData.DRAGON_CROSSBOW &&
-				(animationData == AnimationData.RANGED_CROSSBOW_PVP || animationData == AnimationData.RANGED_RUNE_CROSSBOW))
+			(animationData == AnimationData.RANGED_CROSSBOW_PVP || animationData == AnimationData.RANGED_RUNE_CROSSBOW))
 		{
 			boolean spec = hasTargetSpotAnim(opponent, GFX_TARGET_DCBOW_SPEC);
 
@@ -232,7 +233,7 @@ class Fighter
 			{
 				animationData = AnimationData.RANGED_DRAGON_CROSSBOW_SPEC;
 			}
-			}
+		}
 
 		attackCount++;
 		if (successful)
@@ -440,8 +441,8 @@ class Fighter
 	{
 		nf.setMaximumFractionDigits(1);
 		return shortString ?
-				offPraySuccessCount + "/" + attackCount :
-				offPraySuccessCount + "/" + attackCount + " (" + nf.format(calculateOffPraySuccessPercentage()) + "%)";
+			offPraySuccessCount + "/" + attackCount :
+			offPraySuccessCount + "/" + attackCount + " (" + nf.format(calculateOffPraySuccessPercentage()) + "%)";
 	}
 
 	public String getOffPrayStats()
@@ -457,7 +458,7 @@ class Fighter
 		stats += "/" + nf.format(magicAttackCount);
 		nf.setMaximumFractionDigits(1);
 		String luckPercentage = magicHitCountExpected != 0 ?
-			nf.format(((double)magicHitCount / magicHitCountExpected) * 100.0) :
+			nf.format(((double) magicHitCount / magicHitCountExpected) * 100.0) :
 			"0";
 		stats += " (" + luckPercentage + "%)";
 		return stats;
@@ -467,7 +468,7 @@ class Fighter
 	{
 		nf.setMaximumFractionDigits(1);
 		return magicHitCountExpected != 0 ?
-			nf.format(((double)magicHitCount / magicHitCountExpected) * 100.0) + "%" :
+			nf.format(((double) magicHitCount / magicHitCountExpected) * 100.0) + "%" :
 			"0%";
 	}
 
@@ -478,6 +479,7 @@ class Fighter
 		return onlyDiff ? (difference > 0 ? "+" : "") + nf.format(difference) :
 			nf.format(expectedDamage) + " (" + (difference > 0 ? "+" : "") + nf.format(difference) + ")";
 	}
+
 	public String getExpectedDmgString(Fighter opponent)
 	{
 		return getExpectedDmgString(opponent, 0, false);
@@ -487,9 +489,10 @@ class Fighter
 	public String getDmgDealtString(Fighter opponent, boolean onlyDiff)
 	{
 		int difference = damageDealt - opponent.damageDealt;
-		return onlyDiff ? (difference > 0 ? "+" : "") + difference:
-				damageDealt + " (" + (difference > 0 ? "+" : "") + difference + ")";
+		return onlyDiff ? (difference > 0 ? "+" : "") + difference :
+			damageDealt + " (" + (difference > 0 ? "+" : "") + difference + ")";
 	}
+
 	public String getDmgDealtString(Fighter opponent)
 	{
 		return getDmgDealtString(opponent, false);
@@ -498,13 +501,13 @@ class Fighter
 	public double calculateOffPraySuccessPercentage()
 	{
 		return attackCount == 0 ? 0 :
-				(double) offPraySuccessCount / attackCount * 100.0;
+			(double) offPraySuccessCount / attackCount * 100.0;
 	}
 
 	public double calculateOffensivePraySuccessPercentage()
 	{
 		return attackCount == 0 ? 0 :
-				(double) offensivePraySuccessCount / attackCount * 100.0;
+			(double) offensivePraySuccessCount / attackCount * 100.0;
 	}
 
 	public int getMagicAttackCount()
@@ -519,8 +522,8 @@ class Fighter
 	{
 		nf.setMaximumFractionDigits(1);
 		return shortString ?
-				offensivePraySuccessCount + "/" + attackCount :
-				offensivePraySuccessCount + "/" + attackCount + " (" + nf.format(calculateOffensivePraySuccessPercentage()) + "%)";
+			offensivePraySuccessCount + "/" + attackCount :
+			offensivePraySuccessCount + "/" + attackCount + " (" + nf.format(calculateOffensivePraySuccessPercentage()) + "%)";
 	}
 
 	public String getOffensivePrayStats()
@@ -537,6 +540,7 @@ class Fighter
 	{
 		this.robeHits = 0;
 	}
+
 	public void addRobeHit()
 	{
 		this.robeHits++;

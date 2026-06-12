@@ -47,6 +47,7 @@ public class AnalyzedFightPerformance extends FightPerformance
 	FightPerformance mainFight;
 	@Getter
 	FightPerformance opposingFight;
+
 	// create a more detailed fight performance by merging data from two opposing fight logs
 	// also include the fights for easier access to general info
 	public AnalyzedFightPerformance(FightPerformance mainFight, FightPerformance opposingFight, Runnable swingCallback) throws Exception
@@ -263,13 +264,13 @@ public class AnalyzedFightPerformance extends FightPerformance
 
 	void addCompetitorAttack(FightLogEntry attackerLog, FightLogEntry defenderLog)
 	{
-			this.competitor.addAttack(attackerLog, defenderLog);
-			this.analyzedMatchingLogs.add(new FightLogEntry[]{ attackerLog, defenderLog });
+		this.competitor.addAttack(attackerLog, defenderLog);
+		this.analyzedMatchingLogs.add(new FightLogEntry[]{attackerLog, defenderLog});
 	}
 
 	void addOpponentAttack(FightLogEntry attackerLog, FightLogEntry defenderLog)
 	{
-			this.opponent.addAttack(attackerLog, defenderLog);
-			this.analyzedMatchingLogs.add(new FightLogEntry[]{attackerLog, defenderLog});
+		this.opponent.addAttack(attackerLog, defenderLog);
+		this.analyzedMatchingLogs.add(new FightLogEntry[]{attackerLog, defenderLog});
 	}
 }

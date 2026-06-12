@@ -48,10 +48,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
@@ -83,12 +83,12 @@ import net.runelite.api.Skill;
 import net.runelite.api.SpriteID;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.FakeXpDrop;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.InteractingChanged;
-import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.PlayerDespawned;
+import net.runelite.api.events.StatChanged;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatMessageManager;
@@ -117,7 +117,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 @Slf4j
 @PluginDescriptor(
-		name = "PvP Performance Tracker"
+	name = "PvP Performance Tracker"
 )
 public class PvpPerformanceTrackerPlugin extends Plugin
 {
@@ -234,11 +234,11 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		fightHistory = new ArrayList<>();
 
 		GSON = injectedGson.newBuilder()
-				.excludeFieldsWithoutExposeAnnotation()
-				.registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, theType, context) ->
-						value.isNaN() ? new JsonPrimitive(0) // Convert NaN to zero, otherwise, return as BigDecimal with scale of 3.
-								: new JsonPrimitive(BigDecimal.valueOf(value).setScale(3, RoundingMode.HALF_UP))
-				).create();
+			.excludeFieldsWithoutExposeAnnotation()
+			.registerTypeAdapter(Double.class, (JsonSerializer<Double>) (value, theType, context) ->
+				value.isNaN() ? new JsonPrimitive(0) // Convert NaN to zero, otherwise, return as BigDecimal with scale of 3.
+					: new JsonPrimitive(BigDecimal.valueOf(value).setScale(3, RoundingMode.HALF_UP))
+			).create();
 
 		if (!config.pluginVersion().equals(PLUGIN_VERSION))
 		{
@@ -249,17 +249,17 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "/skull_red.png");
 		PLUGIN_ICON = new ImageIcon(icon).getImage();
 		navButton = NavigationButton.builder()
-				.tooltip("PvP Fight History")
-				.icon(icon)
-				.priority(6)
-				.panel(panel)
-				.build();
+			.tooltip("PvP Fight History")
+			.icon(icon)
+			.priority(6)
+			.panel(panel)
+			.build();
 
 		importFightHistoryData();
 
 		// add the panel's nav button depending on config
 		if (config.showFightHistoryPanel() &&
-				(!config.restrictToLms() || (client.getGameState() == GameState.LOGGED_IN && isAtLMS())))
+			(!config.restrictToLms() || (client.getGameState() == GameState.LOGGED_IN && isAtLMS())))
 		{
 			navButtonShown = true;
 			clientToolbar.addNavigation(navButton);
@@ -274,7 +274,8 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 		// Explicitly rebuild panel after all setup and import.
 		SwingUtilities.invokeLater(() -> {
-			if (panel != null) {
+			if (panel != null)
+			{
 				panel.rebuild();
 			}
 		});
@@ -292,16 +293,19 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!event.getGroup().equals(CONFIG_KEY)) { return; }
+		if (!event.getGroup().equals(CONFIG_KEY))
+		{
+			return;
+		}
 
-		switch(event.getKey())
+		switch (event.getKey())
 		{
 			// if a user enables the panel or restricts/unrestricts the location to LMS, hide/show the panel accordingly
 			case "showFightHistoryPanel":
 			case "restrictToLms":
 				boolean isAtLms = isAtLMS();
 				if (!navButtonShown && config.showFightHistoryPanel() &&
-						(!config.restrictToLms() || isAtLms))
+					(!config.restrictToLms() || isAtLms))
 				{
 					SwingUtilities.invokeLater(() -> clientToolbar.addNavigation(navButton));
 					navButtonShown = true;
@@ -396,8 +400,8 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		// if the client player already has a valid opponent AND the fight has started,
 		// or the event source/target aren't players, skip any processing.
 		if ((hasOpponent() && currentFight.fightStarted())
-				|| !(event.getSource() instanceof Player)
-				|| !(event.getTarget() instanceof Player))
+			|| !(event.getSource() instanceof Player)
+			|| !(event.getTarget() instanceof Player))
 		{
 			return;
 		}
@@ -421,7 +425,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		// start a new fight with the newfound opponent, if a new one.
 		if (!hasOpponent() || !currentFight.getOpponent().getName().equals(opponent.getName()))
 		{
-			currentFight = new FightPerformance(client.getLocalPlayer(), (Player)opponent, hiscoreManager);
+			currentFight = new FightPerformance(client.getLocalPlayer(), (Player) opponent, hiscoreManager);
 			overlay.setFight(currentFight);
 			hitsplatBuffer.clear();
 			incomingHitsplatsBuffer.clear();
@@ -465,7 +469,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged event)
 	{
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 
 		checkForFightEnd();
 
@@ -475,7 +482,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		{
 			if (hasOpponent() && event.getActor() instanceof Player && event.getActor().getName() != null)
 			{
-				currentFight.checkForAttackAnimations((Player)event.getActor(), new CombatLevels(client));
+				currentFight.checkForAttackAnimations((Player) event.getActor(), new CombatLevels(client));
 			}
 		});
 	}
@@ -519,10 +526,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		// Exclude certain hitsplat types (like heal, burn, poison, venom, disease)
 		// from the buffer used for HP-before-hit calculations.
 		boolean isExcludedType = hitType == HitsplatID.HEAL ||
-								 hitType == HitsplatID.POISON ||
-								 hitType == HitsplatID.VENOM ||
-								 hitType == HitsplatID.BURN ||
-								 hitType == HitsplatID.DISEASE;
+			hitType == HitsplatID.POISON ||
+			hitType == HitsplatID.VENOM ||
+			hitType == HitsplatID.BURN ||
+			hitType == HitsplatID.DISEASE;
 
 		if (isExcludedType)
 		{
@@ -560,7 +567,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	public void onStatChanged(StatChanged statChanged)
 	{
 		Skill skill = statChanged.getSkill();
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 
 		if (skill == Skill.HITPOINTS)
 		{
@@ -582,7 +592,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	// track ghost barrages for main competitor/client player
 	public void onFakeXpDrop(FakeXpDrop fakeXpDrop)
 	{
-		if (!hasOpponent() || fakeXpDrop.getSkill() != Skill.MAGIC) { return; }
+		if (!hasOpponent() || fakeXpDrop.getSkill() != Skill.MAGIC)
+		{
+			return;
+		}
 
 		clientThread.invokeLater(this::checkForGhostBarrage);
 	}
@@ -592,7 +605,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	// we can only detect this for the local player
 	private void checkForGhostBarrage()
 	{
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 
 		currentFight.checkForLocalGhostBarrage(new CombatLevels(client), client.getLocalPlayer());
 	}
@@ -618,7 +634,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	{
 		// if there is no ongoing fight, skip any onGameTick processing.
 		// We should have enough extra ticks to calc any hitsplats during death animations and empty these queues.
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 
 		// Process hitsplats from the previous tick
 		int currentTick = client.getTickCount();
@@ -639,24 +658,24 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 			if (currentFight.getOpponent() != null)
 			{
 				totalExpectedAttackHits += currentFight.getOpponent().getPendingAttacks().stream()
-						.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash() && (tickToProcess - e.getTick() <= 5)) // Check if attack could land now
-						.mapToInt(FightLogEntry::getExpectedHits)
-						.sum();
+					.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash() && (tickToProcess - e.getTick() <= 5)) // Check if attack could land now
+					.mapToInt(FightLogEntry::getExpectedHits)
+					.sum();
 			}
 			// Sum expected hits from competitor's pending attacks targeting opponent
 			if (currentFight.getCompetitor() != null)
 			{
 				totalExpectedAttackHits += currentFight.getCompetitor().getPendingAttacks().stream()
-						.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash() && (tickToProcess - e.getTick() <= 5)) // Check if attack could land now
-						.mapToInt(FightLogEntry::getExpectedHits)
-						.sum();
+					.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash() && (tickToProcess - e.getTick() <= 5)) // Check if attack could land now
+					.mapToInt(FightLogEntry::getExpectedHits)
+					.sum();
 			}
 
 			// 2. Compare observed vs expected
 			if (hitsplatsToProcess.size() > totalExpectedAttackHits)
 			{
 				log.debug("Tick {}: Observed hits ({}) > Expected attack hits ({}). Checking for special hits...",
-						tickToProcess, hitsplatsToProcess.size(), totalExpectedAttackHits);
+					tickToProcess, hitsplatsToProcess.size(), totalExpectedAttackHits);
 
 				boolean removedHitInIteration;
 				int safetyBreakCounter = 0;
@@ -704,7 +723,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 										if (hitAmount == expectedVengeance)
 										{
 											log.debug("Tick {}: Found potential Vengeance hit ({} damage) on {} based on {} incoming damage on {}",
-													tickToProcess, hitAmount, target.getName(), incomingDamage, otherPlayer.getName());
+												tickToProcess, hitAmount, target.getName(), incomingDamage, otherPlayer.getName());
 											isCandidate = true;
 											break; // Found a reason, no need to check other incoming hits for this potentialSpecialHit
 										}
@@ -714,7 +733,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 										if (hitAmount == expectedRecoil)
 										{
 											log.debug("Tick {}: Found potential Recoil hit ({} damage) on {} based on {} incoming damage on {}",
-													tickToProcess, hitAmount, target.getName(), incomingDamage, otherPlayer.getName());
+												tickToProcess, hitAmount, target.getName(), incomingDamage, otherPlayer.getName());
 											isCandidate = true;
 											break;
 										}
@@ -762,12 +781,15 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		// Group hitsplats by the actor receiving them (remaining hitsplats after special removal)
 		final List<HitsplatInfo> finalHitsplatsToProcess = hitsplatsToProcess; // Create effectively final list
 		Map<Actor, List<HitsplatInfo>> hitsByActor = finalHitsplatsToProcess.stream()
-				.collect(Collectors.groupingBy((HitsplatInfo info) -> info.getEvent().getActor()));
+			.collect(Collectors.groupingBy((HitsplatInfo info) -> info.getEvent().getActor()));
 
 		List<FightLogEntry> processedEntriesThisTick = new ArrayList<>();
 
 		hitsByActor.forEach((opponent, hits) -> {
-			if (!(opponent instanceof Player)) return; // Only process hits on players
+			if (!(opponent instanceof Player))
+			{
+				return; // Only process hits on players
+			}
 
 			// Determine max HP to use (config, Hiscores, or LMS override)
 			int maxHpToUse;
@@ -818,10 +840,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 			// Get all potentially relevant, unprocessed entries sorted by animation tick
 			List<FightLogEntry> candidateEntries = attacker.getPendingAttacks().stream()
-					.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash())
-					.filter(e -> (client.getTickCount() - e.getTick()) <= 5)
-					.sorted(Comparator.comparingInt(FightLogEntry::getTick))
-					.collect(Collectors.toList());
+				.filter(e -> !e.isKoChanceCalculated() && e.isFullEntry() && !e.isSplash())
+				.filter(e -> (client.getTickCount() - e.getTick()) <= 5)
+				.sorted(Comparator.comparingInt(FightLogEntry::getTick))
+				.collect(Collectors.toList());
 
 			List<FightLogEntry> gmaulsMatchedThisTick = new ArrayList<>();
 			int totalGmaulHitsMatchedThisTick = 0;
@@ -834,9 +856,18 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 				int lookback;
 				switch (entry.getAnimationData().attackStyle)
 				{
-					case STAB: case SLASH: case CRUSH: lookback = 3; break;
-					case MAGIC: lookback = 5; break;
-					case RANGED: default: lookback = 3; break;
+					case STAB:
+					case SLASH:
+					case CRUSH:
+						lookback = 3;
+						break;
+					case MAGIC:
+						lookback = 5;
+						break;
+					case RANGED:
+					default:
+						lookback = 3;
+						break;
 				}
 				if (client.getTickCount() - entry.getTick() > lookback)
 				{
@@ -923,7 +954,11 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 							scale = lastMatchedInfo.getHealthScale();
 						}
 						// Fallback to current ratio/scale if polled is unavailable
-						if (ratio < 0 || scale <= 0) { ratio = opponent.getHealthRatio(); scale = opponent.getHealthScale(); }
+						if (ratio < 0 || scale <= 0)
+						{
+							ratio = opponent.getHealthRatio();
+							scale = opponent.getHealthScale();
+						}
 						int hpBefore = -1;
 						int hpBeforeThisCycle = -1;
 						if (ratio >= 0 && scale > 0 && maxHpToUse > 0)
@@ -1010,18 +1045,21 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		{
 			// Group processed entries by the tick they landed and the attacker
 			Map<Integer, Map<String, List<FightLogEntry>>> groupedByTickAndAttacker = processedEntriesThisTick.stream()
-					.filter(e -> e.getHitsplatTick() >= 0)
-					.collect(Collectors.groupingBy(
-							FightLogEntry::getHitsplatTick,
-							Collectors.groupingBy(
-									FightLogEntry::getAttackerName,
-									Collectors.toList()
-							)
-					));
+				.filter(e -> e.getHitsplatTick() >= 0)
+				.collect(Collectors.groupingBy(
+					FightLogEntry::getHitsplatTick,
+					Collectors.groupingBy(
+						FightLogEntry::getAttackerName,
+						Collectors.toList()
+					)
+				));
 
 			groupedByTickAndAttacker.forEach((tick, attackerMap) -> {
 				attackerMap.forEach((attackerName, entries) -> {
-					if (entries.isEmpty()) return;
+					if (entries.isEmpty())
+					{
+						return;
+					}
 
 					// Sort entries within the tick group by their original animation tick
 					entries.sort(Comparator.comparingInt(FightLogEntry::getTick));
@@ -1041,8 +1079,8 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 						// Calculate total damage for the sequence
 						int totalDamageInSequence = entries.stream()
-								.mapToInt((FightLogEntry e) -> e.getActualDamageSum() != null ? e.getActualDamageSum() : 0)
-								.sum();
+							.mapToInt((FightLogEntry e) -> e.getActualDamageSum() != null ? e.getActualDamageSum() : 0)
+							.sum();
 
 						// Calculate HP Before the entire sequence
 						hpBeforeSequence = hpAfterSequence + totalDamageInSequence;
@@ -1140,13 +1178,25 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	@Subscribe
 	public void onPlayerDespawned(PlayerDespawned event)
 	{
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 		Player despawned = event.getPlayer();
-		if (despawned == null || despawned.getName() == null) { return; }
+		if (despawned == null || despawned.getName() == null)
+		{
+			return;
+		}
 
-		if (currentFight == null || currentFight.getOpponent() == null) { return; }
+		if (currentFight == null || currentFight.getOpponent() == null)
+		{
+			return;
+		}
 		String opponentName = currentFight.getOpponent().getName();
-		if (opponentName == null) { return; }
+		if (opponentName == null)
+		{
+			return;
+		}
 
 		// End fight when opponent despawns after a death was observed on either side
 		if (despawned.getName().equals(opponentName) && (currentFight.getOpponent().isDead() || currentFight.getCompetitor().isDead()))
@@ -1170,14 +1220,17 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 	private void sendUpdateChatMessage()
 	{
-		if (configManager.getConfiguration(CONFIG_KEY, config.updateMsgKey, boolean.class)) { return; }
+		if (configManager.getConfiguration(CONFIG_KEY, config.updateMsgKey, boolean.class))
+		{
+			return;
+		}
 
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.GAMEMESSAGE)
 			.runeLiteFormattedMessage("PvP Performance Tracker 1.7.4 Update: New OPT-IN feature which automatically uploads " +
 				"your fight data to the PvP Hub website, where it can be publicly viewed by anyone. This is disabled by default - " +
 				"the plugin remains entirely client-side if you do not manually opt-into this feature.")
-				.build());
+			.build());
 		configManager.setConfiguration(CONFIG_KEY, config.updateMsgKey, true);
 
 		// remove any old unnecessary flags after updating
@@ -1251,7 +1304,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 			// read the old saved fights from the file into an array, and add them as an updated
 			// fight to the fightHistory list.
 			Arrays.asList(GSON.fromJson(new FileReader(fightHistoryData), FightPerformance__1_5_5[].class))
-					.forEach((oldFight) -> fightHistory.add(new FightPerformance(oldFight)));
+				.forEach((oldFight) -> fightHistory.add(new FightPerformance(oldFight)));
 
 			// now that the fights were deserialized and updated to the newest version, simply save them.
 			// afterwards, they will be re-loaded normally. Bit inefficient but not a big deal
@@ -1264,6 +1317,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 			// Display no modal for this error since it could happen on client load and that has odd behavior.
 		}
 	}
+
 	// Returns true if the player has an opponent.
 	private boolean hasOpponent()
 	{
@@ -1273,7 +1327,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 	private void checkForFightEnd()
 	{
-		if (!hasOpponent()) { return; }
+		if (!hasOpponent())
+		{
+			return;
+		}
 
 		// ensure we check for death animations so that Fighter.isDead gets set properly, but we don't need to
 		// use the state of deaths for ending fights YET (not instantly), we do that within onPlayerDespawned
@@ -1297,7 +1354,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 			// Upload to PvP-Hub if enabled and a fight ID was generated
 			if (CONFIG.uploadFightsToPvpHub() && currentFight.getFightId() != null
-					&& !currentFight.getFightId().isEmpty())
+				&& !currentFight.getFightId().isEmpty())
 			{
 				final FightPerformance fightToUpload = currentFight;
 				executor.submit(() -> PvpHubUploader.uploadFight(fightToUpload, GSON, httpClient));
@@ -1330,18 +1387,22 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	// add fight to loaded fight history
 	void addToFightHistory(FightPerformance fight)
 	{
-		if (fight == null) { return; }
+		if (fight == null)
+		{
+			return;
+		}
 		fightHistory.add(fight);
 		// no need to sort, since they sort chronologically, but they should automatically be added that way.
-		try {
+		try
+		{
 			fight.calculateRobeHits(config.robeHitFilter());
 		}
 		catch (Exception e)
 		{
 			log.warn("Error calculating robe hits for new fight ({} vs {}): {}",
-					fight.getCompetitor() != null ? fight.getCompetitor().getName() : "N/A",
-					fight.getOpponent() != null ? fight.getOpponent().getName() : "N/A",
-					e.getMessage());
+				fight.getCompetitor() != null ? fight.getCompetitor().getName() : "N/A",
+				fight.getOpponent() != null ? fight.getOpponent().getName() : "N/A",
+				e.getMessage());
 		}
 
 		// remove fights as necessary to respect the fightHistoryLimit.
@@ -1376,7 +1437,8 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 			{
 				// Explicitly rebuild panel after recalculation.
 				SwingUtilities.invokeLater(() -> {
-					if (panel != null) {
+					if (panel != null)
+					{
 						panel.rebuild();
 					}
 				});
@@ -1407,7 +1469,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 			// read the saved fights from the file
 			List<FightPerformance> savedFights = Arrays.asList(
-					GSON.fromJson(new FileReader(fightHistoryData), FightPerformance[].class));
+				GSON.fromJson(new FileReader(fightHistoryData), FightPerformance[].class));
 
 			fightHistory.clear();
 			importFights(savedFights);
@@ -1425,7 +1487,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	// more specific FightPerformance processing is done in importFights()
 	public void importUserFightHistoryData(String data)
 	{
-		if (data == null || data.trim().isEmpty()) { return; }
+		if (data == null || data.trim().isEmpty())
+		{
+			return;
+		}
 		try
 		{
 			// read saved fights from the data string and import them
@@ -1448,22 +1513,25 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	{
 		// check for nulls in case the data was corrupted and entries are corrupted.
 		if (f.getCompetitor() == null || f.getOpponent() == null ||
-				f.getCompetitor().getFightLogEntries() == null || f.getOpponent().getFightLogEntries() == null)
+			f.getCompetitor().getFightLogEntries() == null || f.getOpponent().getFightLogEntries() == null)
 		{
 			return;
 		}
 
 		f.getCompetitor().getFightLogEntries().forEach((FightLogEntry l) ->
-				l.attackerName = f.getCompetitor().getName());
+			l.attackerName = f.getCompetitor().getName());
 		f.getOpponent().getFightLogEntries().forEach((FightLogEntry l) ->
-				l.attackerName = f.getOpponent().getName());
+			l.attackerName = f.getOpponent().getName());
 	}
 
 	// process and add a list of deserialized json fights to the currently loaded fights
 	// can throw NullPointerException if some of the serialized data is corrupted
 	void importFights(List<FightPerformance> fights) throws NullPointerException
 	{
-		if (fights == null || fights.isEmpty()) { return; }
+		if (fights == null || fights.isEmpty())
+		{
+			return;
+		}
 
 		fights.removeIf(Objects::isNull);
 		fightHistory.addAll(fights);
@@ -1519,7 +1587,8 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	{
 		boolean atArena = false;
 		int world = client.getWorld();
-		switch(world) {
+		switch (world)
+		{
 			case 570:
 			case 578:
 			case 558:
@@ -1534,10 +1603,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	public void sendTradeChatMessage(String chatMessage)
 	{
 		chatMessageManager
-				.queue(QueuedMessage.builder()
-						.type(ChatMessageType.TRADE)
-						.runeLiteFormattedMessage(chatMessage)
-						.build());
+			.queue(QueuedMessage.builder()
+				.type(ChatMessageType.TRADE)
+				.runeLiteFormattedMessage(chatMessage)
+				.build());
 	}
 
 	// create a simple confirmation modal, using a custom dialog so it can be always
@@ -1571,7 +1640,10 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 	public void exportFight(FightPerformance fight)
 	{
-		if (fight == null) { return; }
+		if (fight == null)
+		{
+			return;
+		}
 		String fightDataJson = GSON.toJson(fight, FightPerformance.class);
 		final StringSelection contents = new StringSelection(fightDataJson);
 		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, null);
@@ -1579,11 +1651,11 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 		boolean success = false;
 		String confirmMessage;
 		if (fight.getCompetitor() != null && fight.getCompetitor().getName() != null &&
-				fight.getOpponent() != null && fight.getOpponent().getName() != null)
+			fight.getOpponent() != null && fight.getOpponent().getName() != null)
 		{
 			success = true;
 			confirmMessage = "Fight data of " + fight.getCompetitor().getName() + " vs " +
-					fight.getOpponent().getName() + " was copied to the clipboard.";
+				fight.getOpponent().getName() + " was copied to the clipboard.";
 		}
 		else
 		{
@@ -1596,13 +1668,13 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 	// aside from comparison/equality checks, so we save an extra mapping this way
 	public int currentlyUsedOffensivePray()
 	{
-		return client.isPrayerActive(Prayer.PIETY) 				? SpriteID.PRAYER_PIETY :
-				client.isPrayerActive(Prayer.ULTIMATE_STRENGTH) ? SpriteID.PRAYER_ULTIMATE_STRENGTH :
-						client.isPrayerActive(Prayer.RIGOUR) 			? SpriteID.PRAYER_RIGOUR :
-								client.isPrayerActive(Prayer.EAGLE_EYE) 		? SpriteID.PRAYER_EAGLE_EYE :
-										client.isPrayerActive(Prayer.AUGURY) 			? SpriteID.PRAYER_AUGURY :
-												client.isPrayerActive(Prayer.MYSTIC_MIGHT)		? SpriteID.PRAYER_MYSTIC_MIGHT :
-														0;
+		return client.isPrayerActive(Prayer.PIETY) ? SpriteID.PRAYER_PIETY :
+			client.isPrayerActive(Prayer.ULTIMATE_STRENGTH) ? SpriteID.PRAYER_ULTIMATE_STRENGTH :
+				client.isPrayerActive(Prayer.RIGOUR) ? SpriteID.PRAYER_RIGOUR :
+					client.isPrayerActive(Prayer.EAGLE_EYE) ? SpriteID.PRAYER_EAGLE_EYE :
+						client.isPrayerActive(Prayer.AUGURY) ? SpriteID.PRAYER_AUGURY :
+							client.isPrayerActive(Prayer.MYSTIC_MIGHT) ? SpriteID.PRAYER_MYSTIC_MIGHT :
+								0;
 	}
 
 	public void addSpriteToLabelIfValid(JLabel label, int spriteId, Runnable swingCallback)

@@ -75,8 +75,11 @@ public interface RangeAmmoData
 	}
 
 	int getItemId(); // itemIDs used for DISPLAYING bolts, not getting them.
+
 	int getRangeStr();
+
 	double getBonusMaxHit(int rangeLevel); // damage bonus from bolt specs.
+
 	double getDmgModifier(); // damage modifier from bolt specs.
 
 	interface RangeAmmoConfigData extends RangeAmmoData
@@ -91,7 +94,7 @@ public interface RangeAmmoData
 		DRAGONSTONE_BOLTS_E("Dstone Bolts (e)", 9244, 117, 1, .2, 0.06),
 		DIAMOND_BOLTS_E("Diamond Bolts (e)", 9243, 105, 1.015);
 
-		static EquipmentData[] WEAPONS_USING = { EquipmentData.RUNE_CROSSBOW };
+		static EquipmentData[] WEAPONS_USING = {EquipmentData.RUNE_CROSSBOW};
 
 		private String name;
 		private int itemId;
@@ -109,6 +112,7 @@ public interface RangeAmmoData
 			this.specChance = specChance;
 			this.dmgModifier = dmgModifier;
 		}
+
 		BoltAmmo(String name, int itemId, int rangeStr, double dmgModifier)
 		{
 			this.name = name;
@@ -164,6 +168,7 @@ public interface RangeAmmoData
 			this.specChance = specChance;
 			this.dmgModifier = dmgModifier;
 		}
+
 		StrongBoltAmmo(String name, int itemId, int rangeStr, double dmgModifier)
 		{
 			this.name = name;
@@ -194,7 +199,7 @@ public interface RangeAmmoData
 		RUNE_DARTS("Rune Darts", 811, 14),
 		DRAGON_DARTS("Dragon Darts", 11230, 20);
 
-		static EquipmentData[] WEAPONS_USING = { EquipmentData.TOXIC_BLOWPIPE };
+		static EquipmentData[] WEAPONS_USING = {EquipmentData.TOXIC_BLOWPIPE};
 
 		private String name;
 		private int itemId;

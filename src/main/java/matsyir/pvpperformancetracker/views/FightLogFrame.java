@@ -45,13 +45,12 @@ import javax.swing.JTable;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import lombok.extern.slf4j.Slf4j;
-import matsyir.pvpperformancetracker.controllers.AnalyzedFightPerformance;
-import matsyir.pvpperformancetracker.models.AnimationData;
-import matsyir.pvpperformancetracker.models.FightLogEntry;
-import matsyir.pvpperformancetracker.controllers.FightPerformance;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
-
+import matsyir.pvpperformancetracker.controllers.AnalyzedFightPerformance;
+import matsyir.pvpperformancetracker.controllers.FightPerformance;
+import matsyir.pvpperformancetracker.models.AnimationData;
+import matsyir.pvpperformancetracker.models.FightLogEntry;
 import matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils;
 import net.runelite.api.ItemID;
 import net.runelite.api.SpriteID;

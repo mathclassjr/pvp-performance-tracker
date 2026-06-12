@@ -34,7 +34,6 @@ import java.awt.Rectangle;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import javax.annotation.Nonnull;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.ui.overlay.components.ComponentConstants;

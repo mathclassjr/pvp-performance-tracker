@@ -51,10 +51,10 @@ import javax.swing.JRootPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
-import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
-import matsyir.pvpperformancetracker.controllers.FightPerformance;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
+import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
 import matsyir.pvpperformancetracker.controllers.AnalyzedFightPerformance;
+import matsyir.pvpperformancetracker.controllers.FightPerformance;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.LinkBrowser;
 

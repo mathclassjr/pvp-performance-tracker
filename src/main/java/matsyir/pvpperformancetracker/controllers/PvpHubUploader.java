@@ -25,6 +25,7 @@
 package matsyir.pvpperformancetracker.controllers;
 
 import com.google.gson.Gson;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -33,8 +34,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
-import java.io.IOException;
 
 /**
  * Handles uploading fight data to PvP-Hub.com.

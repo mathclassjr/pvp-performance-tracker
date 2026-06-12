@@ -1,11 +1,16 @@
 package matsyir.pvpperformancetracker.views;
 
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.MouseEvent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import java.awt.*;
-import java.awt.event.MouseEvent;
 
 public final class PanelFactory
 {

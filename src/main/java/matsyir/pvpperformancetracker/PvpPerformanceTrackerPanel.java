@@ -77,9 +77,10 @@ class PvpPerformanceTrackerPanel extends PluginPanel
 		filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		// filter textfield
 		JTextField nameFilter = new JTextField(config.nameFilter());
-		filterLine.setMaximumSize(new Dimension(PANEL_WIDTH, (int)filterLine.getPreferredSize().getHeight()));
+		filterLine.setMaximumSize(new Dimension(PANEL_WIDTH, (int) filterLine.getPreferredSize().getHeight()));
 
-		nameFilter.getDocument().addDocumentListener(new DocumentListener() {
+		nameFilter.getDocument().addDocumentListener(new DocumentListener()
+		{
 			private void updateNameFilterValue()
 			{
 				plugin.updateNameFilterConfig(nameFilter.getText());
@@ -93,9 +94,20 @@ class PvpPerformanceTrackerPanel extends PluginPanel
 				}
 			}
 
-			public void changedUpdate(DocumentEvent e) { updateNameFilterValue(); }
-			public void removeUpdate(DocumentEvent e) { updateNameFilterValue(); }
-			public void insertUpdate(DocumentEvent e) { updateNameFilterValue(); }
+			public void changedUpdate(DocumentEvent e)
+			{
+				updateNameFilterValue();
+			}
+
+			public void removeUpdate(DocumentEvent e)
+			{
+				updateNameFilterValue();
+			}
+
+			public void insertUpdate(DocumentEvent e)
+			{
+				updateNameFilterValue();
+			}
 		});
 
 		filterLine.add(filterLabel, BorderLayout.NORTH);
@@ -120,10 +132,10 @@ class PvpPerformanceTrackerPanel extends PluginPanel
 		// if the nameFilter isn't blank, skip adding the fight to panels if it doesn't respect the name filter
 		if (!config.nameFilter().equals("")
 			&& (config.exactNameFilter() ?
-				!fight.getCompetitor().getName().toLowerCase().equals(config.nameFilter())
+			!fight.getCompetitor().getName().toLowerCase().equals(config.nameFilter())
 				&& !fight.getOpponent().getName().toLowerCase().equals(config.nameFilter())
-				: !fight.getCompetitor().getName().toLowerCase().startsWith(config.nameFilter())
-				&& !fight.getOpponent().getName().toLowerCase().startsWith(config.nameFilter())))
+			: !fight.getCompetitor().getName().toLowerCase().startsWith(config.nameFilter())
+			&& !fight.getOpponent().getName().toLowerCase().startsWith(config.nameFilter())))
 		{
 			return;
 		}

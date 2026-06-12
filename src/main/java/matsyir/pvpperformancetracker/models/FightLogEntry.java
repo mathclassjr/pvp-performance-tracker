@@ -33,8 +33,9 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import lombok.Getter;
 import lombok.Setter;
-import matsyir.pvpperformancetracker.controllers.PvpDamageCalc;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
+import matsyir.pvpperformancetracker.controllers.PvpDamageCalc;
+import matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils;
 import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GraphicID;
 import net.runelite.api.HeadIcon;
@@ -44,13 +45,13 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Player;
 import net.runelite.client.chat.ChatMessageBuilder;
 import org.apache.commons.text.WordUtils;
-import matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils;
 
 // A fight log entry for a single Fighter. Will be saved in a List of FightLogEntries in the Fighter class.
 @Getter
 public class FightLogEntry implements Comparable<FightLogEntry>
 {
 	public static final NumberFormat nf;
+
 	static
 	{
 		nf = NumberFormat.getInstance();
@@ -204,16 +205,20 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 
 	// Display/Transient fields calculated during post-processing in onGameTick
 	@Expose
-	@Getter @Setter
+	@Getter
+	@Setter
 	private Integer displayHpBefore = null;
 	@Expose
-	@Getter @Setter
+	@Getter
+	@Setter
 	private Integer displayHpAfter = null;
 	@Expose
-	@Getter @Setter
+	@Getter
+	@Setter
 	private Double displayKoChance = null;
 	@Expose
-	@Getter @Setter
+	@Getter
+	@Setter
 	private boolean isPartOfTickGroup = false;
 
 	// Transient fields for handling multi-tick Dragon Claws special attacks
@@ -391,7 +396,7 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 	}
 
 	// randomized entry used for testing
-	public FightLogEntry(int [] attackerGear, int expectedDamage, double accuracy, int minHit, int maxHit, int [] defenderGear, String attackerName)
+	public FightLogEntry(int[] attackerGear, int expectedDamage, double accuracy, int minHit, int maxHit, int[] defenderGear, String attackerName)
 	{
 		this.attackerName = attackerName;
 		this.attackerGear = attackerGear;
@@ -448,7 +453,7 @@ public class FightLogEntry implements Comparable<FightLogEntry>
 		// if diff = 0, return 0. Otherwise, divide diff by its absolute value. This will result in
 		// -1 for negative numbers, and 1 for positive numbers, keeping the sign and a safely small int.
 		return diff == 0 ? 0 :
-				(int)(diff / Math.abs(diff));
+			(int) (diff / Math.abs(diff));
 	}
 
 }

@@ -31,13 +31,11 @@ import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import javax.inject.Inject;
-
 import matsyir.pvpperformancetracker.controllers.FightPerformance;
-import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
-
 import matsyir.pvpperformancetracker.models.TrackedStatistic;
 import matsyir.pvpperformancetracker.views.PanelFactory;
 import matsyir.pvpperformancetracker.views.TableComponent;
+import static net.runelite.api.MenuAction.RUNELITE_OVERLAY_CONFIG;
 import net.runelite.client.ui.overlay.Overlay;
 import static net.runelite.client.ui.overlay.OverlayManager.OPTION_CONFIGURE;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
@@ -52,6 +50,7 @@ public class PvpPerformanceTrackerOverlay extends Overlay
 {
 	private static final String NO_DATA = "-";
 	private static final NumberFormat nfP1 = NumberFormat.getPercentInstance(); // For KO Chance %
+
 	static
 	{
 		nfP1.setMaximumFractionDigits(1);

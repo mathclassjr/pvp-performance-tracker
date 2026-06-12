@@ -36,26 +36,23 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
+import matsyir.pvpperformancetracker.PvpPerformanceTrackerConfig;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.CONFIG;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
+import static matsyir.pvpperformancetracker.controllers.PvpDamageCalc.RANGE_DEF;
 import matsyir.pvpperformancetracker.models.AnimationData;
 import matsyir.pvpperformancetracker.models.AnimationData.AttackStyle;
 import matsyir.pvpperformancetracker.models.CombatLevels;
 import matsyir.pvpperformancetracker.models.FightLogEntry;
 import matsyir.pvpperformancetracker.models.FightType;
-import matsyir.pvpperformancetracker.utils.FightIdGenerator;
 import matsyir.pvpperformancetracker.models.oldVersions.FightPerformance__1_5_5;
+import matsyir.pvpperformancetracker.utils.FightIdGenerator;
+import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
 import net.runelite.api.AnimationID;
-import net.runelite.api.Client;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
-import matsyir.pvpperformancetracker.PvpPerformanceTrackerConfig;
 import net.runelite.api.kit.KitType;
 import net.runelite.client.hiscore.HiscoreManager;
-
-import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
-import static matsyir.pvpperformancetracker.controllers.PvpDamageCalc.RANGE_DEF;
 
 // Holds two Fighters which contain data about PvP fight performance, and has many methods to
 // add to the fight, display stats or check the status of the fight.
@@ -64,14 +61,15 @@ import static matsyir.pvpperformancetracker.controllers.PvpDamageCalc.RANGE_DEF;
 public class FightPerformance implements Comparable<FightPerformance>
 {
 	private static final int[] DEATH_ANIMATIONS = {
-			AnimationID.DEATH,	// Default
-			10629,	// League IV
-			11902,	// League V
+		AnimationID.DEATH,    // Default
+		10629,    // League IV
+		11902,    // League V
 	};
 	// Delay to assume a fight is over. May seem long, but sometimes people barrage &
 	// stand under for a while to eat. Fights will automatically end when either competitor dies.
 	private static final Duration NEW_FIGHT_DELAY = Duration.ofSeconds(21);
 	private static final NumberFormat nf = NumberFormat.getInstance();
+
 	static // initialize number format
 	{
 		nf.setMaximumFractionDigits(1);
@@ -141,16 +139,18 @@ public class FightPerformance implements Comparable<FightPerformance>
 		boolean fightIsAtLMS = PLUGIN.isAtLMS();
 		boolean fightIsAtArena = PLUGIN.isAtArena();
 		this.fightType = FightType.NORMAL;
-		if(fightIsAtLMS) {
+		if (fightIsAtLMS)
+		{
 			this.fightType = defLvl <= FightType.LMS_1DEF.getCombatLevelsForType().def ? FightType.LMS_1DEF :
-					defLvl <= FightType.LMS_ZERK.getCombatLevelsForType().def ? FightType.LMS_ZERK :
-							FightType.LMS_MAXMED;
+				defLvl <= FightType.LMS_ZERK.getCombatLevelsForType().def ? FightType.LMS_ZERK :
+					FightType.LMS_MAXMED;
 		}
-		if(fightIsAtArena) {
+		if (fightIsAtArena)
+		{
 			defLvl = PLUGIN.getClient().getRealSkillLevel(Skill.DEFENCE);
 			this.fightType = defLvl <= FightType.ARENA_1DEF.getCombatLevelsForType().def ? FightType.ARENA_1DEF :
-					defLvl <= FightType.ARENA_ZERK.getCombatLevelsForType().def ? FightType.ARENA_ZERK :
-							FightType.ARENA_MAXMED;
+				defLvl <= FightType.ARENA_ZERK.getCombatLevelsForType().def ? FightType.ARENA_ZERK :
+					FightType.ARENA_MAXMED;
 		}
 
 		// initialize world
@@ -164,9 +164,12 @@ public class FightPerformance implements Comparable<FightPerformance>
 		this.competitor = new Fighter(this, competitor);
 		this.opponent = new Fighter(this, opponent);
 
-		if(!fightIsAtLMS && !fightIsAtArena) {
+		if (!fightIsAtLMS && !fightIsAtArena)
+		{
 			setOpponentsStats(new CombatLevels(opponent.getName(), hiscoreManager));
-		} else {
+		}
+		else
+		{
 			setOpponentsStats(fightType.getCombatLevelsForType());
 		}
 
@@ -187,9 +190,9 @@ public class FightPerformance implements Comparable<FightPerformance>
 			{
 				int defLvl = competitor.getFightLogEntries().get(0).getAttackerLevels().def;
 				this.fightType =
-						defLvl <= FightType.LMS_1DEF.getCombatLevelsForType().def ? FightType.LMS_1DEF :
-								defLvl <= FightType.LMS_ZERK.getCombatLevelsForType().def ? FightType.LMS_ZERK :
-										FightType.LMS_MAXMED;
+					defLvl <= FightType.LMS_1DEF.getCombatLevelsForType().def ? FightType.LMS_1DEF :
+						defLvl <= FightType.LMS_ZERK.getCombatLevelsForType().def ? FightType.LMS_ZERK :
+							FightType.LMS_MAXMED;
 			}
 			else
 			{
@@ -205,21 +208,21 @@ public class FightPerformance implements Comparable<FightPerformance>
 	// return a random fightPerformance used for testing UI
 	static FightPerformance getTestInstance()
 	{
-		int cTotal = (int)(Math.random() * 60) + 8;
-		int cSuccess = (int)(Math.random() * (cTotal - 4)) + 4;
+		int cTotal = (int) (Math.random() * 60) + 8;
+		int cSuccess = (int) (Math.random() * (cTotal - 4)) + 4;
 		double cDamage = (Math.random() * (cSuccess * 25));
 
-		int oTotal = (int)(Math.random() * 60) + 8;
-		int oSuccess = (int)(Math.random() * (oTotal - 4)) + 4;
+		int oTotal = (int) (Math.random() * 60) + 8;
+		int oSuccess = (int) (Math.random() * (oTotal - 4)) + 4;
 		double oDamage = (Math.random() * (oSuccess * 25));
 
-		int secOffset = (int)(Math.random() * 57600) - 28800;
+		int secOffset = (int) (Math.random() * 57600) - 28800;
 
 		boolean cDead = Math.random() >= 0.5;
 
 		ArrayList<FightLogEntry> fightLogEntries = new ArrayList<>();
-		int [] attackerItems = {0, 0, 0};
-		int [] defenderItems = {0, 0, 0};
+		int[] attackerItems = {0, 0, 0};
+		int[] defenderItems = {0, 0, 0};
 		String attackerName = "testname";
 		FightLogEntry fightLogEntry = new FightLogEntry(attackerItems, 21, 0.5, 1, 12, defenderItems, attackerName);
 		FightLogEntry fightLogEntry2 = new FightLogEntry(attackerItems, 11, 0.2, 1, 41, defenderItems, attackerName);
@@ -238,8 +241,8 @@ public class FightPerformance implements Comparable<FightPerformance>
 		this.competitor = new Fighter(this, cName, fightLogs);
 		this.opponent = new Fighter(this, oName, fightLogs);
 
-		competitor.addAttacks(cSuccess, cTotal, cDamage, (int)cDamage, 20, 12, 13, 11, 22, 25, 26);
-		opponent.addAttacks(oSuccess, oTotal, oDamage, (int)oDamage, 20, 14, 13, 11, 22, 25, 26);
+		competitor.addAttacks(cSuccess, cTotal, cDamage, (int) cDamage, 20, 12, 13, 11, 22, 25, 26);
+		opponent.addAttacks(oSuccess, oTotal, oDamage, (int) oDamage, 20, 14, 13, 11, 22, 25, 26);
 
 		if (cDead)
 		{
@@ -277,10 +280,10 @@ public class FightPerformance implements Comparable<FightPerformance>
 			{
 				int offensivePray = PLUGIN.currentlyUsedOffensivePray();
 				competitor.addAttack(
-						opponent.getPlayer(),
-						animationData,
-						offensivePray,
-						competitorLevels, opponentsStats);
+					opponent.getPlayer(),
+					animationData,
+					offensivePray,
+					competitorLevels, opponentsStats);
 				lastFightTime = Instant.now().toEpochMilli();
 				addedAttack = true;
 				ensureFightIdGenerated();
@@ -325,7 +328,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 		competitor.setPlayer(localPlayer);
 		if (localPlayer.getInteracting() instanceof Player && localPlayer.getInteracting().getName().equals(opponent.getName()))
 		{
-			opponent.setPlayer((Player)localPlayer.getInteracting());
+			opponent.setPlayer((Player) localPlayer.getInteracting());
 		}
 
 		AnimationData animationData = competitor.getAnimationData();
@@ -336,10 +339,10 @@ public class FightPerformance implements Comparable<FightPerformance>
 
 			int offensivePray = PLUGIN.currentlyUsedOffensivePray();
 			competitor.addGhostBarrage(opponent.getPlayer().getOverheadIcon() != animationData.attackStyle.getProtection(),
-					opponent.getPlayer(),
-					AnimationData.MAGIC_ANCIENT_MULTI_TARGET,
-					offensivePray,
-					competitorLevels);
+				opponent.getPlayer(),
+				AnimationData.MAGIC_ANCIENT_MULTI_TARGET,
+				offensivePray,
+				competitorLevels);
 		}
 	}
 
@@ -347,7 +350,10 @@ public class FightPerformance implements Comparable<FightPerformance>
 	// the player name being passed in is the one who has the hitsplat on them.
 	public void addDamageDealt(String playerName, int damage)
 	{
-		if (playerName == null) { return; }
+		if (playerName == null)
+		{
+			return;
+		}
 
 		if (playerName.equals(competitor.getName()))
 		{
@@ -489,7 +495,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 		// if diff = 0, return 0. Otherwise, divide diff by its absolute value. This will result in
 		// -1 for negative numbers, and 1 for positive numbers, keeping the sign and a safely small int.
 		return diff == 0 ? 0 :
-				(int)(diff / Math.abs(diff));
+			(int) (diff / Math.abs(diff));
 	}
 
 	/**
@@ -499,7 +505,7 @@ public class FightPerformance implements Comparable<FightPerformance>
 	{
 		competitor.resetRobeHits();
 		opponent.resetRobeHits();
-		ArrayList<FightLogEntry> allFightLogEntries	= getAllFightLogEntries();
+		ArrayList<FightLogEntry> allFightLogEntries = getAllFightLogEntries();
 		if (filter == null || allFightLogEntries == null || allFightLogEntries.isEmpty())
 		{
 			return;
@@ -619,9 +625,12 @@ public class FightPerformance implements Comparable<FightPerformance>
 		}
 	}
 
-    public void updateKoChanceStats(FightLogEntry entry)
+	public void updateKoChanceStats(FightLogEntry entry)
 	{
-		if (entry.getDisplayKoChance() == null) { return; }
+		if (entry.getDisplayKoChance() == null)
+		{
+			return;
+		}
 
 		double koChance = entry.getDisplayKoChance();
 

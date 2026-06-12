@@ -104,8 +104,8 @@ public enum AnimationData
 	MELEE_ANCIENT_GODSWORD_SPEC(9171, AttackStyle.SLASH, true),
 	MELEE_DUAL_MACUACHUITL(10989, AttackStyle.CRUSH), // Note the animation is identical for stab attacks and normal/special attack
 	MELEE_ELDER_MAUL2(11124, AttackStyle.CRUSH), // spec anim, but looks like this anim is also used for normal attacks after using the spec. No spec tracking for now, just for normal attacks
-    MELEE_BURNING_CLAWS_SPEC(11140, AttackStyle.SLASH, true, 3),
-    MELEE_ARKAN_BLADE_SPEC(12297, AttackStyle.SLASH, true),
+	MELEE_BURNING_CLAWS_SPEC(11140, AttackStyle.SLASH, true, 3),
+	MELEE_ARKAN_BLADE_SPEC(12297, AttackStyle.SLASH, true),
 
 	// RANGED
 	RANGED_SHORTBOW(426, AttackStyle.RANGED), // Confirmed same w/ 3 types of arrows, w/ maple, magic, & hunter's shortbow, scorching bow, craw's bow, dbow, dbow spec
@@ -166,8 +166,9 @@ public enum AnimationData
 		this.attackStyle = attackStyle;
 		this.isSpecial = false;
 		this.baseSpellDamage = 0;
-		this.hitsplatGroupPattern = new int[] {1};
+		this.hitsplatGroupPattern = new int[]{1};
 	}
+
 	// Simple animation data constructor for all melee and range attacks w/ special
 	AnimationData(int animationId, AttackStyle attackStyle, boolean isSpecial)
 	{
@@ -179,8 +180,9 @@ public enum AnimationData
 		this.attackStyle = attackStyle;
 		this.isSpecial = isSpecial;
 		this.baseSpellDamage = 0;
-		this.hitsplatGroupPattern = new int[] {1};
+		this.hitsplatGroupPattern = new int[]{1};
 	}
+
 	// Magic spell animation data constructor including base spell damage
 	AnimationData(int animationId, int baseSpellDamage)
 	{
@@ -188,8 +190,9 @@ public enum AnimationData
 		this.attackStyle = AttackStyle.MAGIC;
 		this.isSpecial = false;
 		this.baseSpellDamage = baseSpellDamage;
-		this.hitsplatGroupPattern = new int[] {1};
+		this.hitsplatGroupPattern = new int[]{1};
 	}
+
 	// Constructor for special multi-hit patterns
 	AnimationData(int animationId, AttackStyle attackStyle, boolean isSpecial, int... hitsplatGroupPattern)
 	{
@@ -203,7 +206,7 @@ public enum AnimationData
 		this.baseSpellDamage = 0;
 		this.hitsplatGroupPattern = hitsplatGroupPattern.length > 0
 			? hitsplatGroupPattern
-			: new int[] {1};
+			: new int[]{1};
 	}
 
 	static
@@ -213,7 +216,10 @@ public enum AnimationData
 		for (AnimationData data : values())
 		{
 			// allow to skip animation detection by using 0 or less as the animation id.
-			if (data.animationId <= 0) { continue; }
+			if (data.animationId <= 0)
+			{
+				continue;
+			}
 			builder.put(data.animationId, data);
 		}
 
@@ -285,13 +291,13 @@ public enum AnimationData
 			return (pray > 0 &&
 				((isMelee() &&
 					(pray == SpriteID.PRAYER_PIETY ||
-					 pray == SpriteID.PRAYER_ULTIMATE_STRENGTH)) ||
-				(this == RANGED &&
-					(pray == SpriteID.PRAYER_RIGOUR ||
-					 pray == SpriteID.PRAYER_EAGLE_EYE)) ||
-				(this == MAGIC &&
-					(pray == SpriteID.PRAYER_AUGURY ||
-					 pray == SpriteID.PRAYER_MYSTIC_MIGHT)))
+						pray == SpriteID.PRAYER_ULTIMATE_STRENGTH)) ||
+					(this == RANGED &&
+						(pray == SpriteID.PRAYER_RIGOUR ||
+							pray == SpriteID.PRAYER_EAGLE_EYE)) ||
+					(this == MAGIC &&
+						(pray == SpriteID.PRAYER_AUGURY ||
+							pray == SpriteID.PRAYER_MYSTIC_MIGHT)))
 			);
 		}
 

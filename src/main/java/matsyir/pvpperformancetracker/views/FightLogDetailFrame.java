@@ -38,18 +38,18 @@ import lombok.extern.slf4j.Slf4j;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.CONFIG;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
-import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
 import matsyir.pvpperformancetracker.controllers.AnalyzedFightPerformance;
+import matsyir.pvpperformancetracker.controllers.FightPerformance;
+import matsyir.pvpperformancetracker.controllers.Fighter;
+import matsyir.pvpperformancetracker.controllers.PvpDamageCalc;
 import matsyir.pvpperformancetracker.models.AnimationData;
 import matsyir.pvpperformancetracker.models.CombatLevels;
 import matsyir.pvpperformancetracker.models.EquipmentData;
 import matsyir.pvpperformancetracker.models.FightLogEntry;
-import matsyir.pvpperformancetracker.controllers.FightPerformance;
-import matsyir.pvpperformancetracker.controllers.Fighter;
-import matsyir.pvpperformancetracker.controllers.PvpDamageCalc;
 import matsyir.pvpperformancetracker.models.RangeAmmoData;
 import matsyir.pvpperformancetracker.models.RingData;
 import matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils;
+import static matsyir.pvpperformancetracker.utils.PvpPerformanceTrackerUtils.fixItemId;
 import net.runelite.api.Skill;
 import net.runelite.api.SpriteID;
 import net.runelite.api.kit.KitType;
@@ -93,7 +93,7 @@ class FightLogDetailFrame extends JFrame
 	FightLogDetailFrame(FightPerformance fight, FightLogEntry log, FightLogEntry defenderLog, int rowIdx, Point location)
 	{
 		super("Fight Log Details - " + fight.getCompetitor().getName() + " vs " + fight.getOpponent().getName()
-				+ " on world " + fight.getWorld());
+			+ " on world " + fight.getWorld());
 
 		this.rowIdx = rowIdx;
 
@@ -193,19 +193,25 @@ class FightLogDetailFrame extends JFrame
 		//Pull levels from fight type or if they exist on attacker and defender
 		CombatLevels attackerLevels = fight.fightType.getCombatLevelsForType();
 		CombatLevels defenderLevels = fight.fightType.getCombatLevelsForType();
-		if(isCompetitorLog) {
-			if(log.getAttackerLevels() != null) {
+		if (isCompetitorLog)
+		{
+			if (log.getAttackerLevels() != null)
+			{
 				attackerLevels = log.getAttackerLevels();
 			}
-			if(log.getDefenderLevels() != null) {
+			if (log.getDefenderLevels() != null)
+			{
 				defenderLevels = log.getDefenderLevels();
 			}
 		}
-		if(!isCompetitorLog) {
-			if(log.getAttackerLevels() != null) {
+		if (!isCompetitorLog)
+		{
+			if (log.getAttackerLevels() != null)
+			{
 				attackerLevels = log.getDefenderLevels();
 			}
-			if(log.getDefenderLevels() != null) {
+			if (log.getDefenderLevels() != null)
+			{
 				defenderLevels = fight.competitor.getFightLogEntries().get(rowIdx).getAttackerLevels();
 			}
 		}
@@ -309,8 +315,8 @@ class FightLogDetailFrame extends JFrame
 		JLabel attackerAnimationDetected = new JLabel();
 		attackerAnimationDetected.setText("<html><strong>Animation Detected:</strong> " + log.getAnimationData().toString() + "</html>");
 		attackerAnimationDetected.setToolTipText("<html>Note that the animation can be misleading, as many animations are re-used, but this is normal.<br/>" +
-				"For example, Zammy Hasta and Staff of Fire use the same crush animation.<br/>" +
-				"These were not intended to ever be displayed, but why not include them here.</html>");
+			"For example, Zammy Hasta and Staff of Fire use the same crush animation.<br/>" +
+			"These were not intended to ever be displayed, but why not include them here.</html>");
 		animationDetectedLine.add(attackerAnimationDetected, BorderLayout.CENTER);
 
 
@@ -470,19 +476,19 @@ class FightLogDetailFrame extends JFrame
 	{
 		int[] bonuses = PvpDamageCalc.calculateBonuses(equipment, ringUsed);
 		ItemEquipmentStats stats = ItemEquipmentStats.builder()
-			.astab(bonuses[0])	// 0
-			.aslash(bonuses[1])	// 1
-			.acrush(bonuses[2])	// 2
-			.amagic(bonuses[3])	// 3
-			.arange(bonuses[4])	// 4
-			.dstab(bonuses[5])		// 5
-			.dslash(bonuses[6])		// 6
-			.dcrush(bonuses[7])		// 7
-			.dmagic(bonuses[8])		// 8
-			.drange(bonuses[9])		// 9
-			.str(bonuses[10])	// 10
-			.rstr(bonuses[11]) 	// 11
-			.mdmg(bonuses[12])	// 12
+			.astab(bonuses[0])    // 0
+			.aslash(bonuses[1])    // 1
+			.acrush(bonuses[2])    // 2
+			.amagic(bonuses[3])    // 3
+			.arange(bonuses[4])    // 4
+			.dstab(bonuses[5])        // 5
+			.dslash(bonuses[6])        // 6
+			.dcrush(bonuses[7])        // 7
+			.dmagic(bonuses[8])        // 8
+			.drange(bonuses[9])        // 9
+			.str(bonuses[10])    // 10
+			.rstr(bonuses[11])    // 11
+			.mdmg(bonuses[12])    // 12
 			.build();
 		int ammoRangeStr = 0;
 		if (ammoId != null && ammoId > 0)

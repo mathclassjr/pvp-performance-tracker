@@ -31,7 +31,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Generates a deterministic 10-character fight ID (A-Z, 0-9) from shared game state
  * that both clients in a fight can independently compute without communication.
- *
+ * <p>
  * The ID is derived from:
  * - Both player names (sorted alphabetically so order doesn't matter)
  * - The world number
@@ -46,13 +46,13 @@ public class FightIdGenerator
 	 * Generate a deterministic 10-character fight ID from shared game state.
 	 * Both clients will produce the same ID because all inputs are derived from
 	 * shared game state and NTP-synchronized system clocks.
-	 *
+	 * <p>
 	 * The epoch time is rounded to the nearest 10-second window to absorb any
 	 * minor clock differences between clients (typically < 100ms with NTP).
 	 *
-	 * @param name1      one player's RSN
-	 * @param name2      the other player's RSN
-	 * @param world      the OSRS world number
+	 * @param name1       one player's RSN
+	 * @param name2       the other player's RSN
+	 * @param world       the OSRS world number
 	 * @param epochMillis the current system time in milliseconds (Instant.now().toEpochMilli())
 	 * @return a 10-character uppercase alphanumeric string matching [A-Z0-9]{10}
 	 */

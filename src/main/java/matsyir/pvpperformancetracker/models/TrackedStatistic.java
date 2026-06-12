@@ -1,13 +1,5 @@
 package matsyir.pvpperformancetracker.models;
 
-import lombok.Getter;
-import matsyir.pvpperformancetracker.controllers.FightPerformance;
-import matsyir.pvpperformancetracker.controllers.Fighter;
-import matsyir.pvpperformancetracker.views.PanelFactory;
-import matsyir.pvpperformancetracker.views.TableComponent;
-import net.runelite.client.ui.ColorScheme;
-
-import javax.swing.JPanel;
 import java.awt.Color;
 import java.math.RoundingMode;
 import java.security.InvalidParameterException;
@@ -16,6 +8,13 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import javax.swing.JPanel;
+import lombok.Getter;
+import matsyir.pvpperformancetracker.controllers.FightPerformance;
+import matsyir.pvpperformancetracker.controllers.Fighter;
+import matsyir.pvpperformancetracker.views.PanelFactory;
+import matsyir.pvpperformancetracker.views.TableComponent;
+import net.runelite.client.ui.ColorScheme;
 
 public enum TrackedStatistic
 {

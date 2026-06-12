@@ -1,13 +1,12 @@
 package matsyir.pvpperformancetracker.utils;
 
+import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import matsyir.pvpperformancetracker.models.AnimationData;
 import net.runelite.api.HeadIcon;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.Skill;
 import net.runelite.api.SpriteID;
-
-import java.util.Arrays;
 
 @Slf4j
 public class PvpPerformanceTrackerUtils
@@ -17,9 +16,9 @@ public class PvpPerformanceTrackerUtils
 	/**
 	 * Calculates the chance of knocking out an opponent with a single hit.
 	 *
-	 * @param accuracy           The attacker's accuracy (0.0 to 1.0).
-	 * @param minHit             The attacker's minimum possible hit.
-	 * @param maxHit             The attacker's maximum possible hit.
+	 * @param accuracy            The attacker's accuracy (0.0 to 1.0).
+	 * @param minHit              The attacker's minimum possible hit.
+	 * @param maxHit              The attacker's maximum possible hit.
 	 * @param estimatedOpponentHp The estimated HP of the opponent before the hit.
 	 * @return The KO chance (0.0 to 1.0), or null if the max hit is less than the opponent's HP.
 	 */
@@ -75,10 +74,10 @@ public class PvpPerformanceTrackerUtils
 	/**
 	 * Calculates the opponent's HP before a hit based on their health bar ratio/scale after the hit.
 	 *
-	 * @param ratio      The opponent's health bar ratio after the hit (0-?).
-	 * @param scale      The opponent's health bar scale.
-	 * @param maxHp      The opponent's maximum HP.
-	 * @param damageSum  The total damage dealt by the hitsplat(s).
+	 * @param ratio     The opponent's health bar ratio after the hit (0-?).
+	 * @param scale     The opponent's health bar scale.
+	 * @param maxHp     The opponent's maximum HP.
+	 * @param damageSum The total damage dealt by the hitsplat(s).
 	 * @return The estimated HP before the hit, or -1 if calculation is not possible.
 	 */
 	public static int calculateHpBeforeHit(int ratio, int scale, int maxHp, int damageSum)
@@ -343,33 +342,50 @@ public class PvpPerformanceTrackerUtils
 		return dist;
 	}
 
-    public static int getSpriteForSkill(Skill skill)
-    {
-        switch (skill)
-        {
-            case ATTACK: return SpriteID.SKILL_ATTACK;
-            case STRENGTH: return SpriteID.SKILL_STRENGTH;
-            case DEFENCE: return SpriteID.SKILL_DEFENCE;
-            case RANGED: return SpriteID.SKILL_RANGED;
-            case MAGIC: return SpriteID.SKILL_MAGIC;
-            case HITPOINTS: return SpriteID.SKILL_HITPOINTS;
-            default: return -1;
-        }
-    }
+	public static int getSpriteForSkill(Skill skill)
+	{
+		switch (skill)
+		{
+			case ATTACK:
+				return SpriteID.SKILL_ATTACK;
+			case STRENGTH:
+				return SpriteID.SKILL_STRENGTH;
+			case DEFENCE:
+				return SpriteID.SKILL_DEFENCE;
+			case RANGED:
+				return SpriteID.SKILL_RANGED;
+			case MAGIC:
+				return SpriteID.SKILL_MAGIC;
+			case HITPOINTS:
+				return SpriteID.SKILL_HITPOINTS;
+			default:
+				return -1;
+		}
+	}
 
 	// returns SpriteID for a given HeadIcon. returns -1 if not found
 	public static int getSpriteForHeadIcon(HeadIcon icon)
 	{
-		if (icon == null) { return -1; }
+		if (icon == null)
+		{
+			return -1;
+		}
 		switch (icon)
 		{
-			case MELEE: return SpriteID.PRAYER_PROTECT_FROM_MELEE;
-			case RANGED: return SpriteID.PRAYER_PROTECT_FROM_MISSILES;
-			case MAGIC: return SpriteID.PRAYER_PROTECT_FROM_MAGIC;
-			case SMITE: return SpriteID.PRAYER_SMITE;
-			case RETRIBUTION: return SpriteID.PRAYER_RETRIBUTION;
-			case REDEMPTION: return SpriteID.PRAYER_REDEMPTION;
-			default: return -1;
+			case MELEE:
+				return SpriteID.PRAYER_PROTECT_FROM_MELEE;
+			case RANGED:
+				return SpriteID.PRAYER_PROTECT_FROM_MISSILES;
+			case MAGIC:
+				return SpriteID.PRAYER_PROTECT_FROM_MAGIC;
+			case SMITE:
+				return SpriteID.PRAYER_SMITE;
+			case RETRIBUTION:
+				return SpriteID.PRAYER_RETRIBUTION;
+			case REDEMPTION:
+				return SpriteID.PRAYER_REDEMPTION;
+			default:
+				return -1;
 		}
 	}
 
@@ -384,7 +400,7 @@ public class PvpPerformanceTrackerUtils
 	{
 		if (itemIds == null || itemIds.length < 1)
 		{
-			return new int[] { 0 };
+			return new int[]{0};
 		}
 		int[] fixedItemIds = new int[itemIds.length];
 		for (int i = 0; i < itemIds.length; i++)

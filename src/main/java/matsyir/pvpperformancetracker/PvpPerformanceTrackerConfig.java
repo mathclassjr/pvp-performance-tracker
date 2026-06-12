@@ -24,7 +24,6 @@
  */
 package matsyir.pvpperformancetracker;
 
-import lombok.Getter;
 import matsyir.pvpperformancetracker.models.RangeAmmoData;
 import matsyir.pvpperformancetracker.models.RingData;
 import net.runelite.client.config.Config;
@@ -291,11 +290,11 @@ public interface PvpPerformanceTrackerConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "showOverlayGhostBarrage",
-			name = "Overlay: Show Ghost Barrage",
-			description = "(Advanced): The overlay will display ghost barrage stats.<br>Max. of 5 lines on the overlay",
-			position = 10950,
-			section = overlay
+		keyName = "showOverlayGhostBarrage",
+		name = "Overlay: Show Ghost Barrage",
+		description = "(Advanced): The overlay will display ghost barrage stats.<br>Max. of 5 lines on the overlay",
+		position = 10950,
+		section = overlay
 	)
 	default boolean showOverlayGhostBarrage()
 	{
@@ -547,6 +546,7 @@ public interface PvpPerformanceTrackerConfig extends Config
 	// ================================= On-update flags for chat message update summaries =================================
 	// to avoid spamming multiple update messages for a user who was inactive, just use and overwrite one at a time.
 	String updateMsgKey = "updateMsgShown1_7_4";
+
 	@ConfigItem(
 		keyName = updateMsgKey,
 		name = "Update Msg flag for most recent update",

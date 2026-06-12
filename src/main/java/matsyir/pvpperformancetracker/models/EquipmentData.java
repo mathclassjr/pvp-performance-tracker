@@ -24,6 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package matsyir.pvpperformancetracker.models;
+
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
@@ -300,12 +301,18 @@ public enum EquipmentData
 		// return a void style for a given PlayerComposition
 		public static VoidStyle getVoidStyleFor(int[] playerComposition)
 		{
-			if (playerComposition == null) { return NONE; }
+			if (playerComposition == null)
+			{
+				return NONE;
+			}
 			playerComposition = PvpPerformanceTrackerUtils.fixItemIds(playerComposition);
 
 			EquipmentData gloves = EquipmentData.fromId(playerComposition[KitType.HANDS.getIndex()]);
 
-			if (gloves != EquipmentData.VOID_GLOVES) { return NONE; }
+			if (gloves != EquipmentData.VOID_GLOVES)
+			{
+				return NONE;
+			}
 
 			EquipmentData helm = EquipmentData.fromId(playerComposition[KitType.HEAD.getIndex()]);
 			EquipmentData torso = EquipmentData.fromId(playerComposition[KitType.TORSO.getIndex()]);

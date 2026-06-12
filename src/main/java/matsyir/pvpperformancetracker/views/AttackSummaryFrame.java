@@ -1,11 +1,5 @@
 package matsyir.pvpperformancetracker.views;
 
-import lombok.extern.slf4j.Slf4j;
-import matsyir.pvpperformancetracker.controllers.FightPerformance;
-import matsyir.pvpperformancetracker.models.AnimationData;
-import matsyir.pvpperformancetracker.models.FightLogEntry;
-import net.runelite.api.kit.KitType;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -20,9 +14,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRootPane;
-
+import lombok.extern.slf4j.Slf4j;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN;
 import static matsyir.pvpperformancetracker.PvpPerformanceTrackerPlugin.PLUGIN_ICON;
+import matsyir.pvpperformancetracker.controllers.FightPerformance;
+import matsyir.pvpperformancetracker.models.AnimationData;
+import matsyir.pvpperformancetracker.models.FightLogEntry;
+import net.runelite.api.kit.KitType;
 
 @Slf4j
 public class AttackSummaryFrame extends JFrame

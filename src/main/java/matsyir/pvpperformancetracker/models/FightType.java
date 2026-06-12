@@ -37,10 +37,11 @@ public enum FightType
 	LMS_1DEF(new CombatLevels(91, 118, 1, 112, 99, 99)),
 	NORMAL(CombatLevels.getConfigLevels());
 
-	private static FightType[] LMS_TYPES = { LMS_MAXMED, LMS_ZERK, LMS_1DEF };
-	private static FightType[] ARENA_TYPES = { ARENA_MAXMED, ARENA_ZERK, ARENA_1DEF };
+	private static FightType[] LMS_TYPES = {LMS_MAXMED, LMS_ZERK, LMS_1DEF};
+	private static FightType[] ARENA_TYPES = {ARENA_MAXMED, ARENA_ZERK, ARENA_1DEF};
 
 	private CombatLevels combatLevelsForType;
+
 	FightType(CombatLevels combatLevelsForType)
 	{
 		this.combatLevelsForType = combatLevelsForType;
@@ -60,6 +61,7 @@ public enum FightType
 	{
 		return ArrayUtils.contains(LMS_TYPES, this);
 	}
+
 	public boolean isArenaFight()
 	{
 		return ArrayUtils.contains(ARENA_TYPES, this);
