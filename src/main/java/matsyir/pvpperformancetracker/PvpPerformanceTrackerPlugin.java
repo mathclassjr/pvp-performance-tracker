@@ -771,7 +771,7 @@ public class PvpPerformanceTrackerPlugin extends Plugin
 
 			// Determine max HP to use (config, Hiscores, or LMS override)
 			int maxHpToUse;
-			if (isAtLMS())
+			if (isAtLMS() || isAtArena())
 			{
 				maxHpToUse = 99;
 			}

@@ -261,7 +261,7 @@ class Fighter
 			staffMeleeReduction = hasStaffMeleeReduction(opponent);
 		}
 
-		pvpDamageCalc.updateDamageStats(player, opponent, successful, animationData);
+		pvpDamageCalc.updateDamageStats(player, opponent, successful, animationData, levels, opponentLevels);
 		if (elyProc)
 		{
 			pvpDamageCalc.applyElysianReduction();
